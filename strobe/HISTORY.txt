@@ -1,0 +1,24 @@
+2017-01-24:
+    Realized that cSHAKE S is a bit string, so its length is 12*8 and not 12.
+    
+    Informally tested against someone else's cSHAKE test vectors, so at this
+    point it might actually be right.
+    
+    Spec bump to 1.0.2.
+    
+2017-01-06:
+    Adjust, hopefully, to accommodate changes between NIST cSHAKE (SP 800-185)
+    draft and release.
+
+    Spec bump to 1.0.1.
+
+2016-12-30:
+    Spec bump to 1.0.0.  Public release.
+    
+    The framework *code* (as opposed to the spec it implements) currently
+    doesn't have a version number and should be considered alpha-quality
+    software.
+
+2016-12-06:
+    Release version 0.9.1.  This isn't a full public release yet, because I
+    need to get legal approval for that.
