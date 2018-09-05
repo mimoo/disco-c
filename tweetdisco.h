@@ -1,6 +1,6 @@
 #pragma once
 
-#include "strobe.h"
+#include "tweetstrobe.h"
 
 #include <stdlib.h>
 #include <stdbool.h>

@@ -43,9 +43,6 @@
 #ifndef MIN
 #define MIN(x,y) (((x)<(y)) ? (x) : (y))
 #endif
-
-
-static void printState(strobe_t strobe) {
     for(size_t i = 0; i < sizeof(strobe->state.b); i++) {
         printf("%02x", strobe->state.b[i]);
     }
@@ -94,9 +91,6 @@ static inline void _begin_op(strobe_s *strobe, unsigned int * pptr, uint8_t flag
     uint8_t flags_that_cause_runf = FLAG_C;
     if (p >= RATE || (flags & flags_that_cause_runf)) { _run_f(strobe,p); p = 0; }
     *pptr = p;
-
-    printf("==DEBUG ULTIME===");
-    printState(strobe);
 }
 
 /* The core duplex mode */
@@ -253,7 +247,6 @@ void strobe_init (
     keccak_f(&strobe->state);
 
     _strobe_duplex(strobe,FLAG_A|FLAG_M,(uint8_t*)description,desclen, false);
-    printState(strobe);
 }
 
 

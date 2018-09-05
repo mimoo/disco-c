@@ -34,20 +34,20 @@ void _disco_InitializeSymmetric(symmetricState *ss, u8 *protocol_name, size_t pr
 }
 
 void _disco_MixKey(symmetricState *ss, u8 *input_key_material) {
-	strobe_put(ss->strobe, TYPE_AD, input_key_material, 32);
+	strobe_operate(ss->strobe, TYPE_AD, input_key_material, 32, false);
 	ss->isKeyed = true;
 }
 
 void _disco_MixHash(symmetricState *ss, u8 *data, size_t data_len) {
-	strobe_put(ss->strobe, TYPE_AD, data, data_len);
+	strobe_operate(ss->strobe, TYPE_AD, data, data_len, false);
 }
 
 void _disco_MixKeyAndHash(symmetricState *ss, u8 *input_key_material) {
-	strobe_put(ss->strobe, TYPE_AD, input_key_material, 32);
+	strobe_operate(ss->strobe, TYPE_AD, input_key_material, 32, false);
 }
 
 void _disco_GetHandshakeHash(symmetricState *ss, u8 *result) {
-	strobe_get(ss->strobe, TYPE_PRF, result, 32);
+	strobe_operate(ss->strobe, TYPE_PRF, result, 32, false);
 }
 
 // two things that are bad here:
@@ -55,7 +55,7 @@ void _disco_GetHandshakeHash(symmetricState *ss, u8 *result) {
 // * this modifies the plaintext
 void _disco_EncryptAndHash(symmetricState *ss, u8 *plaintext, size_t plaintext_len) {
 	if(!ss->isKeyed) {
-		strobe_put (ss->strobe, TYPE_CLR, plaintext, plaintext_len);
+		strobe_operate (ss->strobe, TYPE_CLR, plaintext, plaintext_len, false);
 	} else {
 
 		printf("debug2:");
@@ -63,13 +63,13 @@ void _disco_EncryptAndHash(symmetricState *ss, u8 *plaintext, size_t plaintext_l
 			printf("%02x",plaintext[i]);
 		}
 		printf("\n");
-		strobe_operate (ss->strobe, TYPE_ENC, plaintext, plaintext_len);
+		strobe_operate (ss->strobe, TYPE_ENC, plaintext, plaintext_len, false);
 		printf("debug2:");
 		for(int i=0; i<plaintext_len+16;i++) {
 			printf("%02x",plaintext[i]);
 		}
 		printf("\n");
-		strobe_put (ss->strobe, TYPE_MAC, plaintext + plaintext_len, 16);
+		strobe_operate (ss->strobe, TYPE_MAC, plaintext + plaintext_len, 16, false);
 	}
 }
 
@@ -82,13 +82,13 @@ bool _disco_DecryptAndHash(symmetricState *ss, u8 *ciphertext, size_t ciphertext
 		if(ciphertext_len < 32) { // TKTK
 			return false;
 		}
-		strobe_get (ss->strobe, TYPE_CLR | FLAG_I, ciphertext, ciphertext_len);
+		strobe_operate (ss->strobe, TYPE_CLR | FLAG_I, ciphertext, ciphertext_len, false);
 	} else {
 		if(ciphertext_len < 16) {
 			return false;
 		}
-		strobe_get (ss->strobe, TYPE_ENC | FLAG_I, ciphertext, ciphertext_len - 16);
-		ssize_t res = strobe_get (ss->strobe, TYPE_MAC | FLAG_I, ciphertext + ciphertext_len - 16, 16);
+		strobe_operate (ss->strobe, TYPE_ENC | FLAG_I, ciphertext, ciphertext_len - 16, false);
+		ssize_t res = strobe_operate (ss->strobe, TYPE_MAC | FLAG_I, ciphertext + ciphertext_len - 16, 16, false);
 		if(res == -1) {
 			return false;
 		}		
@@ -102,10 +102,10 @@ void _disco_Split(symmetricState *ss, strobe_s *s1, strobe_t s2) {
 	strobe_clone(s1, s2); // DOESNT WORK
 
 	//
-	strobe_operate (s1, TYPE_AD | FLAG_M, (u8*)"initiator", 9);
-	strobe_operate (s2, TYPE_AD | FLAG_M, (u8*)"responder", 9);
+	strobe_operate (s1, TYPE_AD | FLAG_M, (u8*)"initiator", 9, false);
+	strobe_operate (s2, TYPE_AD | FLAG_M, (u8*)"responder", 9, false);
 
-	strobe_put (s2, TYPE_RATCHET, NULL, 16);
+	strobe_operate (s2, TYPE_RATCHET, NULL, 16, false);
 }
 
 //
@@ -410,7 +410,7 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len, u8 *p
 	printf("\n");
 
 	// Payload
-	printf("debug %d - %d\n", hs->symmetric_state.isKeyed, message_len);
+	printf("debug %d - %zu\n", hs->symmetric_state.isKeyed, message_len);
 	if(hs->symmetric_state.isKeyed && message_len < 16) { // a tag must be here
 		return -1;
 	}

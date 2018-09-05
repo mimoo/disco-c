@@ -33,14 +33,6 @@
  */
 #include "keccak_f.c.inc"
 
-
-static void printState(strobe_t strobe) {
-    for(size_t i = 0; i < sizeof(strobe->state.b); i++) {
-        printf("%02x", strobe->state.b[i]);
-    }
-    printf("\n");
-}
-
 static void _run_f (strobe_s *strobe, unsigned int pos) {
     strobe->state.b[pos] ^= strobe->pos_begin;
     strobe->pos_begin = 0;
@@ -82,10 +74,6 @@ static inline void _begin_op(strobe_s *strobe, uint8_t flags) {
 
     // Save the state position
     strobe->position = pos;
-
-
-    printf("==DEBUG ULTIME===");
-    printState(strobe);
 }
 
 /* The core duplex mode */
@@ -194,7 +182,6 @@ void strobe_init(
     strobe->initiator = 2; // None
 
     strobe_operate(strobe, FLAG_A|FLAG_M, (uint8_t*)protocol_name, protocol_name_len, false);
-    printState(strobe);
 }
 
 
