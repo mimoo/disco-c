@@ -55,7 +55,7 @@ static inline void _begin_op(strobe_s *strobe, uint8_t flags) {
 
     // Adjust the direction based on transport
     if (flags & FLAG_T) {
-        if (strobe->initiator == 0) { // None
+        if (strobe->initiator == 2) { // None
             // Set who is initiator and who is responder
             strobe->initiator = flags & FLAG_I;
         }

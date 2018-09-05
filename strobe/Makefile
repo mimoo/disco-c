@@ -4,7 +4,7 @@
  
 CC= gcc
 ARMCC= arm-none-eabi-gcc -fstack-usage -DNDEBUG
-CFLAGS= -std=c11 -Os -Wall -Wextra -Werror $(XCFLAGS)
+CFLAGS= -g -std=c11 -Os -Wall -Wextra -Werror $(XCFLAGS)
 ARMLDFLAGS= -lc -specs=rdimon.specs
 ARMTARGET= -mcpu=cortex-m4 -mthumb -DSTROBE_SINGLE_THREAD=1 
 

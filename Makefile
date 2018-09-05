@@ -1,3 +1,5 @@
+CFLAGS= -g -Wall -Werror
+
 .PHONY: all clean test
 
 all: tweetdisco.a
@@ -8,7 +10,7 @@ tweetdisco.a: tweetdisco.o tweetstrobe.o tweetnacl.o randombytes.o
 
 # :)
 tweetdisco.o: tweetdisco.c tweetdisco.h
-	$(CC) tweetdisco.c -I tweetnacl -I strobe -c -o tweetdisco.o
+	$(CC) $(CFLAGS) tweetdisco.c -I tweetnacl -I strobe -c -o tweetdisco.o
 
 # we use this for x25519
 tweetnacl.o: 
@@ -30,15 +32,15 @@ test: test_disco.c tweetdisco.o tweetstrobe.o tweetnacl.o randombytes.o
 
 # test our implementation of tweetstrobe
 test_strobe: test_strobe.c tweetstrobe.o
-	$(CC) test_strobe.c -I strobe -c -o test.o
-	$(CC) test.o tweetstrobe.o -o test
+	$(CC) $(CFLAGS) test_strobe.c -I strobe -c -o test.o
+	$(CC) $(CFLAGS) test.o tweetstrobe.o -o test
 	./test
 
 # our modification but still has the io/attach feature of strobe
-test_strobe_io: test_strobe_io.c tweetstrobe_io.o
+test_strobe_io: test_strobe_io.c
 	cd strobe && make tweetstrobe_io.o && mv tweetstrobe_io.o ../
-	$(CC) test_strobe_io.c -I strobe -c -o test.o
-	$(CC) test.o tweetstrobe_io.o -o test
+	$(CC) $(CFLAGS) test_strobe_io.c -I strobe -c -o test.o
+	$(CC) $(CFLAGS) test.o tweetstrobe_io.o -o test
 	./test
 
 # the real deal
