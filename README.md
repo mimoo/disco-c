@@ -1,5 +1,8 @@
 # TweetDisco
 
+**THIS IS VERY BAD CODE AND IT DOES NOT WORK AND YOU SHOULDN'T EVEN LOOK AT IT**
+
+
 ## TODO
 
 * **name**: change *tweetdisco* to *embeddedDisco* ?
