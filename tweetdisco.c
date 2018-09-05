@@ -96,6 +96,8 @@ bool _disco_DecryptAndHash(symmetricState *ss, u8 *ciphertext, size_t ciphertext
 	return true;
 }
 
+unsigned char ratchet_buffer[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
 void _disco_Split(symmetricState *ss, strobe_s *s1, strobe_t s2) {
 	//
 	s1 = (strobe_s*)ss->strobe;
@@ -105,7 +107,7 @@ void _disco_Split(symmetricState *ss, strobe_s *s1, strobe_t s2) {
 	strobe_operate (s1, TYPE_AD | FLAG_M, (u8*)"initiator", 9, false);
 	strobe_operate (s2, TYPE_AD | FLAG_M, (u8*)"responder", 9, false);
 
-	strobe_operate (s2, TYPE_RATCHET, NULL, 16, false);
+	strobe_operate (s2, TYPE_RATCHET, ratchet_buffer, 16, false);
 }
 
 //
