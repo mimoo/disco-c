@@ -6,7 +6,7 @@
 // 	- sounds like it either returns -1 or len (or important info for recv_MAC)
 //
 #include "tweetdisco.h"
-#include "tweetnacl.h"
+#include "tweet25519.h"
 #include "tweetstrobe.h"
 
 #include <stdlib.h>
@@ -96,7 +96,7 @@ bool _disco_DecryptAndHash(symmetricState *ss, u8 *ciphertext, size_t ciphertext
 	return true;
 }
 
-unsigned char ratchet_buffer[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+unsigned char ratchet_buffer[16];
 
 void _disco_Split(symmetricState *ss, strobe_s *s1, strobe_t s2) {
 	//
@@ -107,7 +107,6 @@ void _disco_Split(symmetricState *ss, strobe_s *s1, strobe_t s2) {
 	strobe_operate (s1, TYPE_AD | FLAG_M, (u8*)"initiator", 9, false);
 	strobe_operate (s2, TYPE_AD | FLAG_M, (u8*)"responder", 9, false);
 
-	// TODO: this ratchet buffer trick sucks, does ratchet even work?
 	for(int i = 0; i < 16; i++) {
 		ratchet_buffer[i] = 0;
 	}
@@ -449,6 +448,3 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len, u8 *p
 	return message_len;
 }
 
-
-/* crypto_scalarmult_curve25519_tweet(unsigned char *,const unsigned char *,const unsigned char *);
-extern int crypto_scalarmult_curve25519_tweet_base */
