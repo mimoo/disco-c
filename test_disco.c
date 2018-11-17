@@ -19,11 +19,13 @@ void test_disco() {
 
   // initialize client
   handshakeState hs_client;
+  printf("wtf hs_client: %d\n", hs_client.re.isSet);
   disco_Initialize(&hs_client, hp, true, NULL, 0, NULL, NULL, &server_keypair,
                    NULL);
 
   // initialize server
   handshakeState hs_server;
+  printf("wtf hs_server: %d\n", hs_server.re.isSet);
   disco_Initialize(&hs_server, hp, false, NULL, 0, &server_keypair, NULL, NULL,
                    NULL);
 

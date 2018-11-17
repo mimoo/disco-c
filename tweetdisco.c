@@ -60,17 +60,7 @@ void _disco_EncryptAndHash(symmetricState *ss, u8 *plaintext,
   if (!ss->isKeyed) {
     strobe_operate(&(ss->strobe), TYPE_CLR, plaintext, plaintext_len, false);
   } else {
-    printf("debug2:");
-    for (int i = 0; i < plaintext_len + 16; i++) {
-      printf("%02x", plaintext[i]);
-    }
-    printf("\n");
     strobe_operate(&(ss->strobe), TYPE_ENC, plaintext, plaintext_len, false);
-    printf("strobe state before send_MAC:\n");
-    for (int i = 0; i < sizeof(ss->strobe.state); i++) {
-      printf("%02x", ss->strobe.state.b[i]);
-    }
-    printf("\n");
 
     // prepare for tag
     for (int i = 0; i < 16; i++) {
@@ -78,11 +68,6 @@ void _disco_EncryptAndHash(symmetricState *ss, u8 *plaintext,
     }
     strobe_operate(&(ss->strobe), TYPE_MAC, plaintext + plaintext_len, 16,
                    false);
-    printf("strobe state after send_MAC:\n");
-    for (int i = 0; i < sizeof(ss->strobe.state); i++) {
-      printf("%02x", ss->strobe.state.b[i]);
-    }
-    printf("\n");
   }
 }
 
@@ -105,25 +90,10 @@ bool _disco_DecryptAndHash(symmetricState *ss, u8 *ciphertext,
     }
     strobe_operate(&(ss->strobe), TYPE_ENC | FLAG_I, ciphertext,
                    ciphertext_len - 16, false);
-    printf("strobe state before recv_MAC:\n");
-    for (int i = 0; i < sizeof(ss->strobe.state); i++) {
-      printf("%02x", ss->strobe.state.b[i]);
-    }
-    printf("\n");
-    printf("mac on:\n");
-    for (int i = 0; i < 16; i++) {
-      printf("%02x", ciphertext[ciphertext_len - 16 + i]);
-    }
-    printf("\n");
+
     ssize_t res = strobe_operate(&(ss->strobe), TYPE_MAC | FLAG_I,
                                  ciphertext + ciphertext_len - 16, 16, false);
-    printf("strobe state after recv_MAC:\n");
-    for (int i = 0; i < sizeof(ss->strobe.state); i++) {
-      printf("%02x", ss->strobe.state.b[i]);
-    }
-    printf("\n");
     if (res < 0) {
-      printf("hey\n");
       return false;
     }
   }
@@ -212,21 +182,35 @@ void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
 
   // set variables
   if (s != NULL) {
+    printf("init setting s\n");
     hs->s = *s;
     hs->s.isSet = true;
+  } else {
+    hs->s.isSet = false;  // needed
   }
   if (e != NULL) {
+    printf("init setting e\n");
     hs->e = *e;
     hs->e.isSet = true;
+  } else {
+    hs->e.isSet = false;  // needed
   }
   if (rs != NULL) {
+    printf("init setting rs\n");
     hs->rs = *rs;
     hs->rs.isSet = true;
+  } else {
+    hs->rs.isSet = false;  // needed
   }
   if (re != NULL) {
+    printf("init setting re\n");
     hs->re = *re;
     hs->re.isSet = true;
+  } else {
+    hs->re.isSet = false;  // needed
   }
+  printf("init debug s:%d rs:%d, e:%d, re:%d\n", hs->s.isSet, hs->rs.isSet,
+         hs->e.isSet, hs->re.isSet);
   hs->initiator = initiator;
   hs->sending = initiator;
   hs->handshake_done = false;
@@ -359,12 +343,6 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
   }
   _disco_EncryptAndHash(&(hs->symmetric_state), p, payload_len);
 
-  printf("debug:");
-  for (int i = 0; i < payload_len + 16; i++) {
-    printf("%02x", p[i]);
-  }
-  printf("\n");
-
   p += payload_len;
   if (hs->symmetric_state.isKeyed) {
     p += 16;
@@ -480,24 +458,11 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
 
   printf("so far so good, finished reading all tokens\n");
 
-  printf("received handshake encrypted payload:\n");
-  for (int i = 0; i < message_len; i++) {
-    printf("%02x", message[i]);
-  }
-  printf("\n");
-
-  printf("strobe state:\n");
-  for (int i = 0; i < sizeof(hs->symmetric_state.strobe.state); i++) {
-    printf("%02x", hs->symmetric_state.strobe.state.b[i]);
-  }
-  printf("\n");
-
   // Payload
-  printf("iskeyed: %d - payload_len: %zu\n", hs->symmetric_state.isKeyed,
-         message_len);
   if (hs->symmetric_state.isKeyed && message_len < 16) {  // a tag must be here
     return -1;
   }
+
   printf("trying decryption\n");
   bool res =
       _disco_DecryptAndHash(&(hs->symmetric_state), message, message_len);
