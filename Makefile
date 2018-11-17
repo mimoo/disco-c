@@ -30,8 +30,8 @@ tweetstrobe.o: tweetstrobe.c tweetstrobe.h keccak_f.c.inc strobe_config.h
 
 # test is probably how you should compile your own program
 test: test_disco.c tweetdisco.o tweetstrobe.o tweet25519.o randombytes.o
-	$(CC) test_disco.c -I tweetnacl -c -o test_disco.o
-	$(CC) test_disco.o tweetdisco.o tweetstrobe.o tweet25519.o randombytes.o -o test
+	$(CC) -g test_disco.c -I tweetnacl -c -o test_disco.o
+	$(CC) -g test_disco.o tweetdisco.o tweetstrobe.o tweet25519.o randombytes.o -o test
 	./test
 
 # test our implementation of tweetstrobe

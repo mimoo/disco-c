@@ -19,6 +19,23 @@
  *  file, so no headers.
  */
 
+ 
+/* Endian swaps used by keccak implementation */
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+static inline kword_t eswap_letoh(kword_t w) { return w; }
+static inline kword_t eswap_htole(kword_t w) { return w; }
+static inline uint16_t eswap_letoh_16(uint16_t w) { return w; }
+static inline uint16_t eswap_htole_16(uint16_t w) { return w; }
+static inline uint32_t eswap_letoh_32(uint32_t w) { return w; }
+static inline uint32_t eswap_htole_32(uint32_t w) { return w; }
+static inline uint64_t eswap_letoh_64(uint64_t w) { return w; }
+static inline uint64_t eswap_htole_64(uint64_t w) { return w; }
+static inline strobe_length_t eswap_letoh_sl(strobe_length_t w) { return w; }
+static inline strobe_length_t eswap_htole_sl(strobe_length_t w) { return w; }
+#else
+#error "Fix eswap() on non-little-endian machine"
+#endif
+
 /* Could lose this to save size, maybe, depends on arch */
 #ifndef STROBE_OPT_RC_TABLE
 #define STROBE_OPT_RC_TABLE 1
