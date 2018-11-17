@@ -1,4 +1,4 @@
-CFLAGS= -g -Wall -Werror
+CFLAGS= -g -Wall -Werror -std=c11
 
 .PHONY: all clean test
 
