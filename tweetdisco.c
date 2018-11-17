@@ -136,33 +136,28 @@ unsigned char ratchet_buffer[16];
 // but allocated strobe state s2
 // TODO: perhaps return only s1 if this is a one-way handshake pattern?
 // TODO: how do I ensure that a server don't send msg on a one-way hp?
-void _disco_Split(symmetricState *ss, strobe_s **s1, strobe_s **s2) {
+void _disco_Split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
   assert(ss != NULL);
   assert(s1 != NULL && s2 != NULL);
-  assert(*s1 == NULL && *s2 == NULL);
 
   // s1 = our current strobe state
-  *s1 = &(ss->strobe);
-  printf("DEBUG: %p %p\n\n", s1, s2);
+  strobe_clone(&(ss->strobe), s1);
 
   // s2 = s1
-  *s2 = (strobe_s *)calloc(1, sizeof(strobe_s));
-  strobe_clone(*s1, *s2);
+  strobe_clone(s1, s2);
 
   //
-  strobe_operate(*s1, TYPE_AD | FLAG_M, (u8 *)"initiator", 9, false);
-  strobe_operate(*s2, TYPE_AD | FLAG_M, (u8 *)"responder", 9, false);
+  strobe_operate(s1, TYPE_AD | FLAG_M, (u8 *)"initiator", 9, false);
+  strobe_operate(s2, TYPE_AD | FLAG_M, (u8 *)"responder", 9, false);
 
   for (int i = 0; i < 16; i++) {
     ratchet_buffer[i] = 0;
   }
-  strobe_operate(*s1, TYPE_RATCHET, ratchet_buffer, 16, false);
+  strobe_operate(s1, TYPE_RATCHET, ratchet_buffer, 16, false);
   for (int i = 0; i < 16; i++) {
     ratchet_buffer[i] = 0;
   }
-  strobe_operate(*s2, TYPE_RATCHET, ratchet_buffer, 16, false);
-
-  printf("DEBUG: %p %p\n\n", s1, s2);
+  strobe_operate(s2, TYPE_RATCHET, ratchet_buffer, 16, false);
 }
 
 //

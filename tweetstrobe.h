@@ -49,6 +49,7 @@ typedef struct strobe_s {
   uint8_t pos_begin;
   uint8_t flags;
   uint8_t initiator;
+  bool initialized;
 } strobe_s;
 
 /* Initialize a Strobe object with a protocol name */

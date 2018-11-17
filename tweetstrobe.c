@@ -165,6 +165,8 @@ void strobe_init(strobe_s *strobe, const uint8_t *protocol_name,
 
   strobe_operate(strobe, FLAG_A | FLAG_M, (uint8_t *)protocol_name,
                  protocol_name_len, false);
+
+  strobe->initialized = true;
 }
 
 /** Destroy a STROBE object by writing zeros over it. */
@@ -178,6 +180,7 @@ inline void strobe_destroy(strobe_s *strobe) {
   strobe->pos_begin = 0;
   strobe->flags = 0;
   strobe->initiator = 0;
+  strobe->initialized = false;
 }
 
 /** clone a STROBE object */
@@ -188,4 +191,5 @@ inline void strobe_clone(strobe_s *src, strobe_s *dst) {
   dst->pos_begin = src->pos_begin;
   dst->flags = src->flags;
   dst->initiator = src->initiator;
+  dst->initialized = src->initialized;
 }

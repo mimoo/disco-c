@@ -58,11 +58,11 @@ void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
                       u8 *prologue, size_t prologue_len, keyPair *s, keyPair *e,
                       keyPair *rs, keyPair *re);
 int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
-                       u8 *message_buffer, strobe_s **client_s,
-                       strobe_s **server_s);
+                       u8 *message_buffer, strobe_s *client_s,
+                       strobe_s *server_s);
 int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
-                      u8 *payload_buffer, strobe_s **client_s,
-                      strobe_s **server_s);
+                      u8 *payload_buffer, strobe_s *client_s,
+                      strobe_s *server_s);
 void disco_generateKeyPair(keyPair *kp);
 
 // post handshake
