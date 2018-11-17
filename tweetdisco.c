@@ -67,8 +67,8 @@ void _disco_EncryptAndHash(symmetricState *ss, u8 *plaintext,
     printf("\n");
     strobe_operate(&(ss->strobe), TYPE_ENC, plaintext, plaintext_len, false);
     printf("strobe state before send_MAC:\n");
-    for (int i = 0; i < sizeof(ss->strobe->state); i++) {
-      printf("%02x", ss->strobe->state.b[i]);
+    for (int i = 0; i < sizeof(ss->strobe.state); i++) {
+      printf("%02x", ss->strobe.state.b[i]);
     }
     printf("\n");
 
@@ -79,8 +79,8 @@ void _disco_EncryptAndHash(symmetricState *ss, u8 *plaintext,
     strobe_operate(&(ss->strobe), TYPE_MAC, plaintext + plaintext_len, 16,
                    false);
     printf("strobe state after send_MAC:\n");
-    for (int i = 0; i < sizeof(ss->strobe->state); i++) {
-      printf("%02x", ss->strobe->state.b[i]);
+    for (int i = 0; i < sizeof(ss->strobe.state); i++) {
+      printf("%02x", ss->strobe.state.b[i]);
     }
     printf("\n");
   }
@@ -106,8 +106,8 @@ bool _disco_DecryptAndHash(symmetricState *ss, u8 *ciphertext,
     strobe_operate(&(ss->strobe), TYPE_ENC | FLAG_I, ciphertext,
                    ciphertext_len - 16, false);
     printf("strobe state before recv_MAC:\n");
-    for (int i = 0; i < sizeof(ss->strobe->state); i++) {
-      printf("%02x", ss->strobe->state.b[i]);
+    for (int i = 0; i < sizeof(ss->strobe.state); i++) {
+      printf("%02x", ss->strobe.state.b[i]);
     }
     printf("\n");
     printf("mac on:\n");
@@ -137,9 +137,6 @@ unsigned char ratchet_buffer[16];
 // TODO: perhaps return only s1 if this is a one-way handshake pattern?
 // TODO: how do I ensure that a server don't send msg on a one-way hp?
 void _disco_Split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
-  assert(ss != NULL);
-  assert(s1 != NULL && s2 != NULL);
-
   // s1 = our current strobe state
   strobe_clone(&(ss->strobe), s1);
 
@@ -275,10 +272,9 @@ void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
 // * same buffer?
 // * reset buffer to 0 everytime right before writing to it?
 int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
-                       u8 *message_buffer, strobe_s **client_s,
-                       strobe_s **server_s) {
+                       u8 *message_buffer, strobe_s *client_s,
+                       strobe_s *server_s) {
   assert(client_s != NULL && server_s != NULL);
-  assert(*client_s == NULL && *server_s == NULL);
   assert(hs != NULL && payload != NULL && message_buffer != NULL);
   assert(hs->handshake_done == false && hs->sending == true);
 
@@ -309,7 +305,7 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
         memcpy(p, hs->s.pub, 32);
         _disco_EncryptAndHash(&(hs->symmetric_state), p, 32);
         p += 32;
-        if (hs->symmetric_state->isKeyed) {
+        if (hs->symmetric_state.isKeyed) {
           p += 16;
         }
         break;
@@ -370,16 +366,14 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
   printf("\n");
 
   p += payload_len;
-  if (hs->symmetric_state->isKeyed) {
+  if (hs->symmetric_state.isKeyed) {
     p += 16;
   }
 
   // Split?
   if (current_token == token_end_handshake) {
     printf("spliting\n");
-    printf("DEBUG: %p %p\n\n", client_s, server_s);
     _disco_Split(&(hs->symmetric_state), client_s, server_s);
-    printf("DEBUG: %p %p\n\n", client_s, server_s);
     hs->message_patterns = NULL;
     _disco_Destroy(hs);
   } else {
@@ -391,10 +385,9 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
 }
 
 int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
-                      u8 *payload_buffer, strobe_s **client_s,
-                      strobe_s **server_s) {
+                      u8 *payload_buffer, strobe_s *client_s,
+                      strobe_s *server_s) {
   assert(client_s != NULL && server_s != NULL);
-  assert(*client_s == NULL && *server_s == NULL);
   assert(hs != NULL && message != NULL && payload_buffer != NULL);
   assert(hs->handshake_done == false && hs->sending == false);
 
@@ -426,7 +419,7 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
         printf("s token\n");
         assert(!hs->s.isSet);
         int ciphertext_len = 32;
-        if (hs->symmetric_state->isKeyed) {
+        if (hs->symmetric_state.isKeyed) {
           ciphertext_len += 16;
         }
         if (message_len < ciphertext_len) {
@@ -494,15 +487,15 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
   printf("\n");
 
   printf("strobe state:\n");
-  for (int i = 0; i < sizeof(hs->symmetric_state->strobe->state); i++) {
-    printf("%02x", hs->symmetric_state->strobe->state.b[i]);
+  for (int i = 0; i < sizeof(hs->symmetric_state.strobe.state); i++) {
+    printf("%02x", hs->symmetric_state.strobe.state.b[i]);
   }
   printf("\n");
 
   // Payload
-  printf("iskeyed: %d - payload_len: %zu\n", hs->symmetric_state->isKeyed,
+  printf("iskeyed: %d - payload_len: %zu\n", hs->symmetric_state.isKeyed,
          message_len);
-  if (hs->symmetric_state->isKeyed && message_len < 16) {  // a tag must be here
+  if (hs->symmetric_state.isKeyed && message_len < 16) {  // a tag must be here
     return -1;
   }
   printf("trying decryption\n");
@@ -512,7 +505,7 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
     return -1;
   }
   // the real length of the message (minus tag)
-  if (hs->symmetric_state->isKeyed) {
+  if (hs->symmetric_state.isKeyed) {
     message_len -= 16;
   }
   // TODO: payload_buffer might not have enough room
