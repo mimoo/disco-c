@@ -1,4 +1,4 @@
-CFLAGS= -g -Wall -Werror -std=c11
+CFLAGS= -g -O1 -Wall -Werror -std=c11 -fsanitize=address
 
 .PHONY: all clean test
 
@@ -14,7 +14,7 @@ tweetdisco.o: tweetdisco.c tweetdisco.h
 
 # we use this for x25519
 tweetnacl.o: 
-	cd tweetnacl && $(CC) tweetnacl.c -c -o ../tweetnacl.o
+	cd tweetnacl && $(CC) $(CFLAGS) tweetnacl.c -c -o ../tweetnacl.o
 
 # we use this for X25519 (no ed25519)
 tweet25519.o: 
@@ -22,7 +22,7 @@ tweet25519.o:
 
 # we need this for tweetnacl
 randombytes.o: 
-	cd nacl-20110221/randombytes && $(CC) devurandom.c -c -o randombytes.o && mv randombytes.o ../../
+	cd nacl-20110221/randombytes && $(CC) $(CFLAGS) devurandom.c -c -o randombytes.o && mv randombytes.o ../../
 
 # our modification of strobe
 tweetstrobe.o: tweetstrobe.c tweetstrobe.h keccak_f.c.inc strobe_config.h
@@ -30,8 +30,8 @@ tweetstrobe.o: tweetstrobe.c tweetstrobe.h keccak_f.c.inc strobe_config.h
 
 # test is probably how you should compile your own program
 test: test_disco.c tweetdisco.o tweetstrobe.o tweet25519.o randombytes.o
-	$(CC) -g test_disco.c -I tweetnacl -c -o test_disco.o
-	$(CC) -g test_disco.o tweetdisco.o tweetstrobe.o tweet25519.o randombytes.o -o test
+	$(CC) $(CFLAGS) -g test_disco.c -I tweetnacl -c -o test_disco.o
+	$(CC) $(CFLAGS) -g test_disco.o tweetdisco.o tweetstrobe.o tweet25519.o randombytes.o -o test
 	./test
 
 # test our implementation of tweetstrobe
@@ -51,8 +51,8 @@ test_strobe_io: test_strobe_io.c
 # the real strobe
 test_real_strobe: test_real_strobe.c
 	cd strobe && make strobe.o && make x25519.o && mv strobe.o ../ && mv x25519.o ../
-	$(CC) test_real_strobe.c -I strobe -c -o test.o
-	$(CC) test.o strobe.o x25519.o -o test
+	$(CC) $(CFLAGS) test_real_strobe.c -I strobe -c -o test.o
+	$(CC) $(CFLAGS) test.o strobe.o x25519.o -o test
 	./test
 
 clean:
