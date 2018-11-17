@@ -35,12 +35,12 @@ typedef struct handshakePattern {
 
 // states
 typedef struct symmetricState {
-  strobe_s *strobe;
+  strobe_s strobe;
   bool isKeyed;
 } symmetricState;
 
 typedef struct handshakeState {
-  symmetricState *symmetric_state;
+  symmetricState symmetric_state;
 
   keyPair s;
   keyPair e;

@@ -32,24 +32,24 @@ void _disco_DH(keyPair mine, keyPair theirs, u8 *output) {
 
 void _disco_InitializeSymmetric(symmetricState *ss, u8 *protocol_name,
                                 size_t protocol_name_len) {
-  strobe_init(ss->strobe, protocol_name, protocol_name_len);
+  strobe_init(&(ss->strobe), protocol_name, protocol_name_len);
 }
 
 void _disco_MixKey(symmetricState *ss, u8 *input_key_material) {
-  strobe_operate(ss->strobe, TYPE_AD, input_key_material, 32, false);
+  strobe_operate(&(ss->strobe), TYPE_AD, input_key_material, 32, false);
   ss->isKeyed = true;
 }
 
 void _disco_MixHash(symmetricState *ss, u8 *data, size_t data_len) {
-  strobe_operate(ss->strobe, TYPE_AD, data, data_len, false);
+  strobe_operate(&(ss->strobe), TYPE_AD, data, data_len, false);
 }
 
 void _disco_MixKeyAndHash(symmetricState *ss, u8 *input_key_material) {
-  strobe_operate(ss->strobe, TYPE_AD, input_key_material, 32, false);
+  strobe_operate(&(ss->strobe), TYPE_AD, input_key_material, 32, false);
 }
 
 void _disco_GetHandshakeHash(symmetricState *ss, u8 *result) {
-  strobe_operate(ss->strobe, TYPE_PRF, result, 32, false);
+  strobe_operate(&(ss->strobe), TYPE_PRF, result, 32, false);
 }
 
 // two things that are bad here:
@@ -58,14 +58,14 @@ void _disco_GetHandshakeHash(symmetricState *ss, u8 *result) {
 void _disco_EncryptAndHash(symmetricState *ss, u8 *plaintext,
                            size_t plaintext_len) {
   if (!ss->isKeyed) {
-    strobe_operate(ss->strobe, TYPE_CLR, plaintext, plaintext_len, false);
+    strobe_operate(&(ss->strobe), TYPE_CLR, plaintext, plaintext_len, false);
   } else {
     printf("debug2:");
     for (int i = 0; i < plaintext_len + 16; i++) {
       printf("%02x", plaintext[i]);
     }
     printf("\n");
-    strobe_operate(ss->strobe, TYPE_ENC, plaintext, plaintext_len, false);
+    strobe_operate(&(ss->strobe), TYPE_ENC, plaintext, plaintext_len, false);
     printf("strobe state before send_MAC:\n");
     for (int i = 0; i < sizeof(ss->strobe->state); i++) {
       printf("%02x", ss->strobe->state.b[i]);
@@ -76,7 +76,8 @@ void _disco_EncryptAndHash(symmetricState *ss, u8 *plaintext,
     for (int i = 0; i < 16; i++) {
       plaintext[i + plaintext_len] = 0;
     }
-    strobe_operate(ss->strobe, TYPE_MAC, plaintext + plaintext_len, 16, false);
+    strobe_operate(&(ss->strobe), TYPE_MAC, plaintext + plaintext_len, 16,
+                   false);
     printf("strobe state after send_MAC:\n");
     for (int i = 0; i < sizeof(ss->strobe->state); i++) {
       printf("%02x", ss->strobe->state.b[i]);
@@ -96,13 +97,13 @@ void _disco_EncryptAndHash(symmetricState *ss, u8 *plaintext,
 bool _disco_DecryptAndHash(symmetricState *ss, u8 *ciphertext,
                            size_t ciphertext_len) {
   if (!ss->isKeyed) {
-    strobe_operate(ss->strobe, TYPE_CLR | FLAG_I, ciphertext, ciphertext_len,
+    strobe_operate(&(ss->strobe), TYPE_CLR | FLAG_I, ciphertext, ciphertext_len,
                    false);
   } else {
     if (ciphertext_len < 16) {
       return false;
     }
-    strobe_operate(ss->strobe, TYPE_ENC | FLAG_I, ciphertext,
+    strobe_operate(&(ss->strobe), TYPE_ENC | FLAG_I, ciphertext,
                    ciphertext_len - 16, false);
     printf("strobe state before recv_MAC:\n");
     for (int i = 0; i < sizeof(ss->strobe->state); i++) {
@@ -114,11 +115,11 @@ bool _disco_DecryptAndHash(symmetricState *ss, u8 *ciphertext,
       printf("%02x", ciphertext[ciphertext_len - 16 + i]);
     }
     printf("\n");
-    ssize_t res = strobe_operate(ss->strobe, TYPE_MAC | FLAG_I,
+    ssize_t res = strobe_operate(&(ss->strobe), TYPE_MAC | FLAG_I,
                                  ciphertext + ciphertext_len - 16, 16, false);
     printf("strobe state after recv_MAC:\n");
-    for (int i = 0; i < sizeof(ss->strobe->state); i++) {
-      printf("%02x", ss->strobe->state.b[i]);
+    for (int i = 0; i < sizeof(ss->strobe.state); i++) {
+      printf("%02x", ss->strobe.state.b[i]);
     }
     printf("\n");
     if (res < 0) {
@@ -141,7 +142,7 @@ void _disco_Split(symmetricState *ss, strobe_s **s1, strobe_s **s2) {
   assert(*s1 == NULL && *s2 == NULL);
 
   // s1 = our current strobe state
-  *s1 = (strobe_s *)ss->strobe;
+  *s1 = &(ss->strobe);
   printf("DEBUG: %p %p\n\n", s1, s2);
 
   // s2 = s1
@@ -170,7 +171,6 @@ void _disco_Split(symmetricState *ss, strobe_s **s1, strobe_s **s2) {
 
 // destroy hs except symmetric state
 void _disco_Destroy(handshakeState *hs) {
-  hs->symmetric_state = NULL;
   int size_to_remove;
   volatile u8 *p;
   if (hs->s.isSet) {
@@ -197,10 +197,6 @@ void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
   assert((prologue_len > 0 && prologue != NULL) ||
          (prologue_len == 0 && prologue == NULL));
 
-  // set symmetric state and strobe state
-  hs->symmetric_state = (symmetricState *)calloc(1, sizeof(symmetricState));
-  hs->symmetric_state->strobe = (strobe_s *)calloc(1, sizeof(strobe_s));
-
   // checking if keys are set correctly
   if (strcmp((const char *)hp.name, "N") == 0) {
     assert((initiator && rs) || (!initiator && s));
@@ -214,12 +210,12 @@ void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
                            // 40 // TODO: DEFFERED PATTERNS?
   sprintf(protocol_name, "Noise_%s_25519_STROBEv1.0.2", hp.name);
 
-  _disco_InitializeSymmetric(hs->symmetric_state, (u8 *)protocol_name,
+  _disco_InitializeSymmetric(&(hs->symmetric_state), (u8 *)protocol_name,
                              strlen((char *)protocol_name));
 
   // prologue
   if (prologue != NULL && prologue_len != 0) {
-    _disco_MixHash(hs->symmetric_state, prologue, prologue_len);
+    _disco_MixHash(&(hs->symmetric_state), prologue, prologue_len);
   }
 
   // set variables
@@ -252,16 +248,16 @@ void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
     switch (current_token) {
       case token_s:
         if ((initiator && direction) || (!initiator && !direction)) {
-          _disco_MixHash(hs->symmetric_state, hs->s.pub, 32);
+          _disco_MixHash(&(hs->symmetric_state), hs->s.pub, 32);
         } else {
-          _disco_MixHash(hs->symmetric_state, hs->rs.pub, 32);
+          _disco_MixHash(&(hs->symmetric_state), hs->rs.pub, 32);
         }
         break;
       case token_e:
         if ((initiator && direction) || (!initiator && !direction)) {
-          _disco_MixHash(hs->symmetric_state, hs->e.pub, 32);
+          _disco_MixHash(&(hs->symmetric_state), hs->e.pub, 32);
         } else {
-          _disco_MixHash(hs->symmetric_state, hs->re.pub, 32);
+          _disco_MixHash(&(hs->symmetric_state), hs->re.pub, 32);
         }
         break;
       case token_end_turn:
@@ -310,13 +306,13 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
         disco_generateKeyPair(&(hs->e));
         memcpy(p, hs->e.pub, 32);
         p += 32;
-        _disco_MixHash(hs->symmetric_state, hs->e.pub, 32);
+        _disco_MixHash(&(hs->symmetric_state), hs->e.pub, 32);
         break;
       case token_s:
         printf("s token\n");
         assert(hs->s.isSet);
         memcpy(p, hs->s.pub, 32);
-        _disco_EncryptAndHash(hs->symmetric_state, p, 32);
+        _disco_EncryptAndHash(&(hs->symmetric_state), p, 32);
         p += 32;
         if (hs->symmetric_state->isKeyed) {
           p += 16;
@@ -326,7 +322,7 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
         printf("ee token\n");
         // TODO: does this really replaces everything in DH_Result?
         _disco_DH(hs->e, hs->re, DH_result);
-        _disco_MixKey(hs->symmetric_state, DH_result);
+        _disco_MixKey(&(hs->symmetric_state), DH_result);
         // TODO: reset DH_result?
         break;
       case token_es:
@@ -336,7 +332,7 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
         } else {
           _disco_DH(hs->s, hs->re, DH_result);
         }
-        _disco_MixKey(hs->symmetric_state, DH_result);
+        _disco_MixKey(&(hs->symmetric_state), DH_result);
         break;
       case token_se:
         printf("se token\n");
@@ -345,12 +341,12 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
         } else {
           _disco_DH(hs->e, hs->rs, DH_result);
         }
-        _disco_MixKey(hs->symmetric_state, DH_result);
+        _disco_MixKey(&(hs->symmetric_state), DH_result);
         break;
       case token_ss:
         printf("ss token\n");
         _disco_DH(hs->s, hs->rs, DH_result);
-        _disco_MixKey(hs->symmetric_state, DH_result);
+        _disco_MixKey(&(hs->symmetric_state), DH_result);
         break;
       case token_end_turn:
         printf("end of turn\n");
@@ -370,7 +366,7 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
   if (payload != NULL) {
     memcpy(p, payload, payload_len);
   }
-  _disco_EncryptAndHash(hs->symmetric_state, p, payload_len);
+  _disco_EncryptAndHash(&(hs->symmetric_state), p, payload_len);
 
   printf("debug:");
   for (int i = 0; i < payload_len + 16; i++) {
@@ -387,7 +383,7 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
   if (current_token == token_end_handshake) {
     printf("spliting\n");
     printf("DEBUG: %p %p\n\n", client_s, server_s);
-    _disco_Split(hs->symmetric_state, client_s, server_s);
+    _disco_Split(&(hs->symmetric_state), client_s, server_s);
     printf("DEBUG: %p %p\n\n", client_s, server_s);
     hs->message_patterns = NULL;
     _disco_Destroy(hs);
@@ -429,7 +425,7 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
         message_len -= 32;
         message += 32;
         hs->re.isSet = true;
-        _disco_MixHash(hs->symmetric_state, hs->re.pub, 32);
+        _disco_MixHash(&(hs->symmetric_state), hs->re.pub, 32);
         break;
       case token_s:
         printf("s token\n");
@@ -441,8 +437,8 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
         if (message_len < ciphertext_len) {
           return -1;
         }
-        bool res =
-            _disco_DecryptAndHash(hs->symmetric_state, message, ciphertext_len);
+        bool res = _disco_DecryptAndHash(&(hs->symmetric_state), message,
+                                         ciphertext_len);
         if (!res) {
           return false;
         }
@@ -455,7 +451,7 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
         printf("ee token\n");
         // TODO: does this really replaces everything in DH_Result?
         _disco_DH(hs->e, hs->re, DH_result);
-        _disco_MixKey(hs->symmetric_state, DH_result);
+        _disco_MixKey(&(hs->symmetric_state), DH_result);
         // TODO: reset DH_result?
         break;
       case token_es:
@@ -465,7 +461,7 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
         } else {
           _disco_DH(hs->s, hs->re, DH_result);
         }
-        _disco_MixKey(hs->symmetric_state, DH_result);
+        _disco_MixKey(&(hs->symmetric_state), DH_result);
         break;
       case token_se:
         printf("se token\n");
@@ -474,12 +470,12 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
         } else {
           _disco_DH(hs->e, hs->rs, DH_result);
         }
-        _disco_MixKey(hs->symmetric_state, DH_result);
+        _disco_MixKey(&(hs->symmetric_state), DH_result);
         break;
       case token_ss:
         printf("ss token\n");
         _disco_DH(hs->s, hs->rs, DH_result);
-        _disco_MixKey(hs->symmetric_state, DH_result);
+        _disco_MixKey(&(hs->symmetric_state), DH_result);
         break;
       case token_end_turn:
         printf("end turn token\n");
@@ -515,7 +511,8 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
     return -1;
   }
   printf("trying decryption\n");
-  bool res = _disco_DecryptAndHash(hs->symmetric_state, message, message_len);
+  bool res =
+      _disco_DecryptAndHash(&(hs->symmetric_state), message, message_len);
   if (!res) {
     return -1;
   }
@@ -530,7 +527,7 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
   // Split?
   if (current_token == token_end_handshake) {
     printf("splitting!\n");
-    _disco_Split(hs->symmetric_state, client_s, server_s);
+    _disco_Split(&(hs->symmetric_state), client_s, server_s);
     hs->message_patterns = NULL;
     _disco_Destroy(hs);
   } else {
