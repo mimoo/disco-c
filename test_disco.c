@@ -1,7 +1,7 @@
 #include "tweetdisco.h"
 #include <stdio.h>
 
-int main() {
+void test_disco() {
   // in Disco-c, this is how you use a handshake pattern:
   // just copy/paste an already existing pattern from the list of patterns
   // here we copy/pasted the N pattern
@@ -29,8 +29,8 @@ int main() {
 
   // write the first handshake message → e, es
   u8 out[500];
-  strobe_s *c_write;
-  strobe_s *c_read;
+  strobe_s *c_write = NULL;
+  strobe_s *c_read = NULL;
   u8 text[] = "hey!";
   int out_len = disco_WriteMessage(&hs_client, text, 5, out, &c_write, &c_read);
   if (out_len < 0) {
@@ -46,8 +46,8 @@ int main() {
 
   // process the first handshake message → e, es
   u8 in[500];
-  strobe_s *s_read;
-  strobe_s *s_write;
+  strobe_s *s_read = NULL;
+  strobe_s *s_write = NULL;
   int in_len =
       disco_ReadMessage(&hs_server, out, out_len, in, &s_read, &s_write);
   if (in_len < 0) {
@@ -62,14 +62,24 @@ int main() {
   printf("received %d bytes:%s\n", in_len, in);
 
   // trying to send a post-handshake message
-  u8 *ciphertext;
-  size_t ciphertext_len;
-  disco_Encrypt(c_write, text, 5, &ciphertext, &ciphertext_len);
+  u8 pt_in_place[] =
+      "Us little brogammers we like to brogamme on our motorbikes yeah "
+      "yeah "
+      "yeah\0xxxxxxxxxxxxxxxx";
+  disco_EncryptInPlace(c_write, pt_in_place, 83, 83 + 16);
 
-  // debug
-  printf("encrypted message:\n");
-  for (int i = 0; i < ciphertext_len; i++) {
-    printf("%02x", ciphertext[i]);
+  if (disco_DecryptInPlace(s_read, pt_in_place, 83 + 16) == false) {
+    printf("cannot decrypt in place");
+    abort();
   }
-  printf("\n");
+  printf("final decrypt in place: %s\n", pt_in_place);
+}
+
+int main() {
+  // doing a loop coz I have a bug SOMETIMES
+  for (int j = 0;; j++) {
+    printf("iteration #%d\n", j);
+    test_disco();
+  }
+
 }

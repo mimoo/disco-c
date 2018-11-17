@@ -133,6 +133,8 @@ unsigned char ratchet_buffer[16];
 
 // _disco_Split takes a symmetric state ss, a strobe state s1 and an empty
 // but allocated strobe state s2
+// TODO: perhaps return only s1 if this is a one-way handshake pattern?
+// TODO: how do I ensure that a server don't send msg on a one-way hp?
 void _disco_Split(symmetricState *ss, strobe_s **s1, strobe_s **s2) {
   assert(ss != NULL);
   assert(s1 != NULL && s2 != NULL);
@@ -272,16 +274,7 @@ void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
     }
   }
 
-  // copy message patterns
-  /*
-  hs->message_patterns = (token *)malloc(sizeof(hp.message_patterns));
-  for (int i = 0;; i++) {
-    hs->message_patterns[i] = hp.message_patterns[i];
-    if (hp.message_patterns[i] == token_end_handshake) {
-      break;
-    }
-  }
-  */
+  // point to message patterns
   hs->message_patterns = hp.message_patterns;
 }
 
@@ -565,22 +558,6 @@ void disco_EncryptInPlace(strobe_s *strobe, u8 *plaintext, size_t plaintext_len,
   strobe_operate(strobe, TYPE_MAC, plaintext + plaintext_len, 16, false);
 }
 
-// disco_Encrypt takes a plaintext and encrypts it into ciphertext
-// Note that the strobe state is also mutated to reflect the send_ENC and
-// send_MAC operations
-void disco_Encrypt(strobe_s *strobe, u8 *plaintext, size_t plaintext_len,
-                   u8 **ciphertext, size_t *ciphertext_len) {
-  *ciphertext = (u8 *)malloc(plaintext_len + 16);
-  *ciphertext_len = plaintext_len + 16;
-  memcpy(*ciphertext, plaintext, plaintext_len);
-  strobe_operate(strobe, TYPE_ENC, *ciphertext, plaintext_len, false);
-  // prepare for tag
-  for (int i = 0; i < 16; i++) {
-    (*ciphertext)[i + plaintext_len] = 0;
-  }
-  strobe_operate(strobe, TYPE_MAC, *ciphertext + plaintext_len, 16, false);
-}
-
 // disco_DecryptInPlace decrypts the ciphertext and replaces the buffer's
 // content
 // with the obtained plaintext. the new length will be 16 bytes less
@@ -603,37 +580,6 @@ bool disco_DecryptInPlace(strobe_s *strobe, u8 *ciphertext,
     return false;
     // TODO: should we destroy the strobe object at this point?
   }
-  // all good
-  return true;
-}
-
-// Note that the strobe state is also mutated to reflect the recv_ENC and
-// recv_MAC operations
-bool disco_Decrypt(strobe_s *strobe, u8 *ciphertext, size_t ciphertext_len,
-                   u8 **plaintext, size_t *plaintext_len) {
-  // can't contain authentication tag
-  if (ciphertext_len < 16) {
-    return false;
-  }
-  // copy ciphertext
-  *plaintext = (u8 *)malloc(sizeof(ciphertext_len));
-  memcpy(plaintext, ciphertext, ciphertext_len);
-  // decrypt into plaintext
-  strobe_operate(strobe, TYPE_ENC | FLAG_I, *plaintext, ciphertext_len - 16,
-                 false);
-  // verify tag
-  ssize_t res = strobe_operate(strobe, TYPE_MAC | FLAG_I,
-                               *plaintext + ciphertext_len - 16, 16, false);
-  // TODO: I'm doing this on the plaintext because I can't remember if this
-  // operation is modifying the buffer
-
-  // bad authentication tag
-  if (res == -1) {
-    *plaintext_len = 0;
-    return false;
-    // TODO: should we destroy the strobe object at this point?
-  }
-  *plaintext_len = ciphertext_len - 16;
   // all good
   return true;
 }
