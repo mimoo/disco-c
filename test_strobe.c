@@ -74,7 +74,22 @@ int main() {
     printf("error2\n");
     return 1;
   }
-  printf("4. recv_MAC: %ld", ret);
+  printf("4. recv_MAC: %ld\n", ret);
+
+  //
+  unsigned char outt[16];
+  ret = strobe_operate(&s1, TYPE_MAC, outt, 16, false);
+  if (ret < 0) {
+    printf("error\n");
+    return 1;
+  }
+  print("-debug buffer:", outt, 16);
+  ret = strobe_operate(&s2, TYPE_MAC | FLAG_I, outt, 16, false);
+  if (ret < 0) {
+    printf("error2\n");
+    return 1;
+  }
+  print("-debug buffer2:", buffer, 16);
 
   return 0;
 }

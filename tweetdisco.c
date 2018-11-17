@@ -71,6 +71,11 @@ void _disco_EncryptAndHash(symmetricState *ss, u8 *plaintext,
       printf("%02x", ss->strobe->state.b[i]);
     }
     printf("\n");
+
+    // prepare for tag
+    for (int i = 0; i < 16; i++) {
+      plaintext[i + plaintext_len] = 0;
+    }
     strobe_operate(ss->strobe, TYPE_MAC, plaintext + plaintext_len, 16, false);
     printf("strobe state after send_MAC:\n");
     for (int i = 0; i < sizeof(ss->strobe->state); i++) {
@@ -102,6 +107,11 @@ bool _disco_DecryptAndHash(symmetricState *ss, u8 *ciphertext,
     printf("strobe state before recv_MAC:\n");
     for (int i = 0; i < sizeof(ss->strobe->state); i++) {
       printf("%02x", ss->strobe->state.b[i]);
+    }
+    printf("\n");
+    printf("mac on:\n");
+    for (int i = 0; i < 16; i++) {
+      printf("%02x", ciphertext[ciphertext_len - 16 + i]);
     }
     printf("\n");
     ssize_t res = strobe_operate(ss->strobe, TYPE_MAC | FLAG_I,
@@ -548,6 +558,10 @@ void disco_EncryptInPlace(strobe_s *strobe, u8 *plaintext, size_t plaintext_len,
                           size_t plaintext_capacity) {
   assert(plaintext_capacity == plaintext_len + 16);
   strobe_operate(strobe, TYPE_ENC, plaintext, plaintext_len, false);
+  // prepare for tag
+  for (int i = 0; i < 16; i++) {
+    plaintext[i + plaintext_len] = 0;
+  }
   strobe_operate(strobe, TYPE_MAC, plaintext + plaintext_len, 16, false);
 }
 
@@ -558,8 +572,12 @@ void disco_Encrypt(strobe_s *strobe, u8 *plaintext, size_t plaintext_len,
                    u8 **ciphertext, size_t *ciphertext_len) {
   *ciphertext = (u8 *)malloc(plaintext_len + 16);
   *ciphertext_len = plaintext_len + 16;
-  memcpy(ciphertext, plaintext, plaintext_len);
+  memcpy(*ciphertext, plaintext, plaintext_len);
   strobe_operate(strobe, TYPE_ENC, *ciphertext, plaintext_len, false);
+  // prepare for tag
+  for (int i = 0; i < 16; i++) {
+    (*ciphertext)[i + plaintext_len] = 0;
+  }
   strobe_operate(strobe, TYPE_MAC, *ciphertext + plaintext_len, 16, false);
 }
 

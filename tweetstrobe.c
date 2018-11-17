@@ -127,6 +127,9 @@ static ssize_t _strobe_duplex(strobe_s *strobe, uint8_t *buffer,
   return buffer_len;
 }
 
+// strobe_operate
+// Note: if you're using PRF, RATCHET or send_MAC. Your buffer needs to be
+// initialized with 0s.
 ssize_t strobe_operate(strobe_s *strobe, uint8_t flags, uint8_t *buffer,
                        size_t buffer_len, bool more) {
   assert(strobe->position < RATE);
