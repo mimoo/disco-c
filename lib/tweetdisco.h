@@ -15,7 +15,11 @@ typedef struct keyPair {
   bool isSet;
 } keyPair;
 
+//
 // handshake pattern
+//
+
+// tokens
 typedef enum token {
   token_e = 1,
   token_s = 2,
@@ -33,7 +37,22 @@ typedef struct handshakePattern {
   token *message_patterns;
 } handshakePattern;
 
+// N
+#define HANDSHAKE_N                                                           \
+  (handshakePattern) {                                                        \
+    .name = "N", .pre_message_patterns =                                      \
+                     (token[]){token_end_turn, token_s, token_end_handshake}, \
+    .message_patterns = (token[]) {                                           \
+      token_e, token_es, token_end_handshake                                  \
+    }                                                                         \
+  }
+// NX
+// TKTK
+
+//
 // states
+//
+
 typedef struct symmetricState {
   strobe_s strobe;
   bool isKeyed;

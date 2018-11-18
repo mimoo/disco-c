@@ -5,6 +5,8 @@ void test_disco() {
   // in Disco-c, this is how you use a handshake pattern:
   // just copy/paste an already existing pattern from the list of patterns
   // here we copy/pasted the N pattern
+
+  /*
   token pre_message_patterns[] = {token_end_turn,                 // →
                                   token_s, token_end_handshake};  // ← s
   token message_patterns[] = {token_e, token_es,
@@ -12,6 +14,7 @@ void test_disco() {
   handshakePattern hp = {.name = "N",
                          .pre_message_patterns = (token *)pre_message_patterns,
                          .message_patterns = (token *)message_patterns};
+  */
 
   // generate server keypair
   keyPair server_keypair;
@@ -20,14 +23,14 @@ void test_disco() {
   // initialize client
   handshakeState hs_client;
   printf("wtf hs_client: %d\n", hs_client.re.isSet);
-  disco_Initialize(&hs_client, hp, true, NULL, 0, NULL, NULL, &server_keypair,
-                   NULL);
+  disco_Initialize(&hs_client, HANDSHAKE_N, true, NULL, 0, NULL, NULL,
+                   &server_keypair, NULL);
 
   // initialize server
   handshakeState hs_server;
   printf("wtf hs_server: %d\n", hs_server.re.isSet);
-  disco_Initialize(&hs_server, hp, false, NULL, 0, &server_keypair, NULL, NULL,
-                   NULL);
+  disco_Initialize(&hs_server, HANDSHAKE_N, false, NULL, 0, &server_keypair,
+                   NULL, NULL, NULL);
 
   // write the first handshake message → e, es
   u8 out[500];
