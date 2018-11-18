@@ -2,6 +2,9 @@ CFLAGS= -g -O1 -Wall -Werror -std=c11 -fsanitize=address
 
 .PHONY: all clean test
 
+# This is a draft of a Makefile
+# it contains stuff like -g and -std=c11 and -fsanitize=address that are not
+# useful for production binaries
 all: tweetdisco.a
 
 # make a library, is this useful?
