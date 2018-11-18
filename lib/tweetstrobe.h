@@ -94,4 +94,4 @@ typedef uint128_t strobe_length_t;
 #endif
 
 void strobe_destroy(strobe_s *strobe);
-void strobe_clone(strobe_s *src, strobe_s *dst);
+void strobe_clone(const strobe_s *src, strobe_s *dst);

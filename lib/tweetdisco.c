@@ -61,11 +61,6 @@ void _disco_EncryptAndHash(symmetricState *ss, u8 *plaintext,
     strobe_operate(&(ss->strobe), TYPE_CLR, plaintext, plaintext_len, false);
   } else {
     strobe_operate(&(ss->strobe), TYPE_ENC, plaintext, plaintext_len, false);
-
-    // prepare for tag
-    for (int i = 0; i < 16; i++) {
-      plaintext[i + plaintext_len] = 0;
-    }
     strobe_operate(&(ss->strobe), TYPE_MAC, plaintext + plaintext_len, 16,
                    false);
   }
@@ -136,6 +131,7 @@ void _disco_Split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
 // destroy hs except symmetric state
 void _disco_Destroy(handshakeState *hs) {
   int size_to_remove;
+  // remove keys
   volatile u8 *p;
   if (hs->s.isSet) {
     p = hs->s.priv;
@@ -151,6 +147,8 @@ void _disco_Destroy(handshakeState *hs) {
       *p++ = 0;
     }
   }
+  // remove symmetric state / strobe
+  strobe_destroy(&(hs->symmetric_state.strobe));
 }
 
 // disco_Initialize needs the symmetric_state
@@ -516,10 +514,6 @@ void disco_EncryptInPlace(strobe_s *strobe, u8 *plaintext, size_t plaintext_len,
                           size_t plaintext_capacity) {
   assert(plaintext_capacity == plaintext_len + 16);
   strobe_operate(strobe, TYPE_ENC, plaintext, plaintext_len, false);
-  // prepare for tag
-  for (int i = 0; i < 16; i++) {
-    plaintext[i + plaintext_len] = 0;
-  }
   strobe_operate(strobe, TYPE_MAC, plaintext + plaintext_len, 16, false);
 }
 

@@ -195,7 +195,7 @@ inline void strobe_destroy(strobe_s *strobe) {
 }
 
 /** clone a STROBE object */
-inline void strobe_clone(strobe_s *src, strobe_s *dst) {
+inline void strobe_clone(const strobe_s *src, strobe_s *dst) {
   assert(src != NULL && dst != NULL);
   memcpy(dst->state.b, src->state.b, 25 * sizeof(kword_t) / sizeof(uint8_t));
   dst->position = src->position;
