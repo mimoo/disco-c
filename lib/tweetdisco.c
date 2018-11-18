@@ -107,6 +107,7 @@ unsigned char ratchet_buffer[16];
 // TODO: perhaps return only s1 if this is a one-way handshake pattern?
 // TODO: how do I ensure that a server don't send msg on a one-way hp?
 void _disco_Split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
+  assert(s1 != NULL && s2 != NULL);
   // s1 = our current strobe state
   strobe_clone(&(ss->strobe), s1);
 
@@ -175,6 +176,8 @@ void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
   _disco_InitializeSymmetric(&(hs->symmetric_state), (u8 *)protocol_name,
                              strlen((char *)protocol_name));
 
+  hs->symmetric_state.isKeyed = false;
+
   // prologue
   if (prologue != NULL && prologue_len != 0) {
     _disco_MixHash(&(hs->symmetric_state), prologue, prologue_len);
@@ -186,7 +189,7 @@ void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
     hs->s = *s;
     hs->s.isSet = true;
   } else {
-    hs->s.isSet = false;  // needed
+    hs->s.isSet = false;  // needed, I don't know why...
   }
   if (e != NULL) {
     printf("init setting e\n");
@@ -258,7 +261,6 @@ void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
 int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
                        u8 *message_buffer, strobe_s *client_s,
                        strobe_s *server_s) {
-  assert(client_s != NULL && server_s != NULL);
   assert(hs != NULL && payload != NULL && message_buffer != NULL);
   assert(hs->handshake_done == false && hs->sending == true);
 
@@ -365,7 +367,6 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
 int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
                       u8 *payload_buffer, strobe_s *client_s,
                       strobe_s *server_s) {
-  assert(client_s != NULL && server_s != NULL);
   assert(hs != NULL && message != NULL && payload_buffer != NULL);
   assert(hs->handshake_done == false && hs->sending == false);
 

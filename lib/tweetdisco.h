@@ -37,7 +37,6 @@ typedef struct handshakePattern {
   token *message_patterns;
 } handshakePattern;
 
-// N
 #define HANDSHAKE_N                                                           \
   (handshakePattern) {                                                        \
     .name = "N", .pre_message_patterns =                                      \
@@ -46,9 +45,95 @@ typedef struct handshakePattern {
       token_e, token_es, token_end_handshake                                  \
     }                                                                         \
   }
-// NX
-// TKTK
+#define HANDSHAKE_K                                                       \
+  (handshakePattern) {                                                    \
+    .name = "K",                                                          \
+    .pre_message_patterns =                                               \
+        (token[]){token_s, token_end_turn, token_s, token_end_handshake}, \
+    .message_patterns = (token[]) {                                       \
+      token_e, token_es, token_ss, token_end_handshake                    \
+    }                                                                     \
+  }
+#define HANDSHAKE_X                                                           \
+  (handshakePattern) {                                                        \
+    .name = "X", .pre_message_patterns =                                      \
+                     (token[]){token_end_turn, token_s, token_end_handshake}, \
+    .message_patterns = (token[]) {                                           \
+      token_e, token_es, token_s, token_ss, token_end_handshake               \
+    }                                                                         \
+  }
+#define HANDSHAKE_NK                                                           \
+  (handshakePattern) {                                                         \
+    .name = "NK", .pre_message_patterns =                                      \
+                      (token[]){token_end_turn, token_s, token_end_handshake}, \
+    .message_patterns = (token[]) {                                            \
+      token_e, token_es, token_end_turn, token_e, token_ee,                    \
+          token_end_handshake                                                  \
+    }                                                                          \
+  }
+#define HANDSHAKE_KK                                                      \
+  (handshakePattern) {                                                    \
+    .name = "KK",                                                         \
+    .pre_message_patterns =                                               \
+        (token[]){token_s, token_end_turn, token_s, token_end_handshake}, \
+    .message_patterns = (token[]) {                                       \
+      token_e, token_es, token_ss, token_end_turn, token_e, token_ee,     \
+          token_se, token_end_handshake                                   \
+    }                                                                     \
+  }
+#define HANDSHAKE_NX                                                      \
+  (handshakePattern) {                                                    \
+    .name = "NX", .pre_message_patterns = (token[]){token_end_handshake}, \
+    .message_patterns = (token[]) {                                       \
+      token_e, token_end_turn, token_e, token_ee, token_s, token_es,      \
+          token_end_handshake                                             \
+    }                                                                     \
+  }
+#define HANDSHAKE_KX                                                           \
+  (handshakePattern) {                                                         \
+    .name = "KX",                                                              \
+    .pre_message_patterns = (token[]){token_s, token_end_handshake},           \
+    .message_patterns = (token[]) {                                            \
+      token_e, token_end_turn, token_e, token_ee, token_se, token_s, token_es, \
+          token_end_handshake                                                  \
+    }                                                                          \
+  }
+#define HANDSHAKE_XK                                                           \
+  (handshakePattern) {                                                         \
+    .name = "XK", .pre_message_patterns =                                      \
+                      (token[]){token_end_turn, token_s, token_end_handshake}, \
+    .message_patterns = (token[]) {                                            \
+      token_e, token_es, token_end_turn, token_e, token_ee, token_end_turn,    \
+          token_s, token_se, token_end_handshake                               \
+    }                                                                          \
+  }
+#define HANDSHAKE_IK                                                           \
+  (handshakePattern) {                                                         \
+    .name = "IK", .pre_message_patterns =                                      \
+                      (token[]){token_end_turn, token_s, token_end_handshake}, \
+    .message_patterns = (token[]) {                                            \
+      token_e, token_es, token_s, token_ss, token_end_turn, token_e, token_ee, \
+          token_se, token_end_handshake                                        \
+    }                                                                          \
+  }
 
+#define HANDSHAKE_XX                                                      \
+  (handshakePattern) {                                                    \
+    .name = "XX", .pre_message_patterns = (token[]){token_end_handshake}, \
+    .message_patterns = (token[]) {                                       \
+      token_e, token_end_turn, token_e, token_ee, token_s, token_es,      \
+          token_end_turn, token_s, token_se, token_end_handshake          \
+    }                                                                     \
+  }
+
+#define HANDSHAKE_IX                                                          \
+  (handshakePattern) {                                                        \
+    .name = "IX", .pre_message_patterns = (token[]){token_end_handshake},     \
+    .message_patterns = (token[]) {                                           \
+      token_e, token_s, token_end_turn, token_e, token_ee, token_se, token_s, \
+          token_es, token_end_handshake                                       \
+    }                                                                         \
+  }
 //
 // states
 //

@@ -134,6 +134,17 @@ ssize_t strobe_operate(strobe_s *strobe, uint8_t flags, uint8_t *buffer,
                        size_t buffer_len, bool more) {
   assert(strobe->position < RATE);
 
+  // set buffer to 0 if RATCHET, send_MAC or PRF
+  // RATCHET = C, send_MAC = C | T, PRF = I | A | C
+  if ((flags & FLAG_C) == FLAG_C) {
+    if (flags == (FLAG_I | FLAG_A | FLAG_C) || flags == (FLAG_C) ||
+        flags == (FLAG_C | FLAG_T)) {
+      for (size_t i = 0; i < buffer_len; i++) {
+        buffer[i] = 0;
+      }
+    }
+  }
+
   if (more) {
     assert(flags == strobe->flags);
   } else {
@@ -142,7 +153,7 @@ ssize_t strobe_operate(strobe_s *strobe, uint8_t flags, uint8_t *buffer,
   }
 
   bool cafter = (flags & (FLAG_C | FLAG_I | FLAG_T)) == (FLAG_C | FLAG_T);
-  bool cbefore = (flags & FLAG_C) && !cafter;
+  bool cbefore = (flags & FLAG_C) && (!cafter);
   bool recv_MAC = (flags & (0xF | FLAG_I)) == (TYPE_MAC | FLAG_I);
 
   return _strobe_duplex(strobe, buffer, buffer_len, cbefore, cafter, recv_MAC);
