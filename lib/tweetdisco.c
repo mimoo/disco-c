@@ -94,6 +94,7 @@ bool _disco_DecryptAndHash(symmetricState *ss, u8 *ciphertext,
     ssize_t res = strobe_operate(&(ss->strobe), TYPE_MAC | FLAG_I,
                                  ciphertext + ciphertext_len - 16, 16, false);
     if (res < 0) {
+      printf("heyhey\n");
       return false;
     }
   }
@@ -153,9 +154,9 @@ void _disco_Destroy(handshakeState *hs) {
 }
 
 // disco_Initialize needs the symmetric_state
-void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
-                      u8 *prologue, size_t prologue_len, keyPair *s, keyPair *e,
-                      keyPair *rs, keyPair *re) {
+void disco_Initialize(handshakeState *hs, const handshakePattern hp,
+                      bool initiator, u8 *prologue, size_t prologue_len,
+                      keyPair *s, keyPair *e, keyPair *rs, keyPair *re) {
   assert(hs != NULL);
   assert((prologue_len > 0 && prologue != NULL) ||
          (prologue_len == 0 && prologue == NULL));
@@ -290,6 +291,11 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
         assert(hs->s.isSet);
         memcpy(p, hs->s.pub, 32);
         _disco_EncryptAndHash(&(hs->symmetric_state), p, 32);
+        printf("encrypted s\n");
+        for (int i = 0; i < 32 + 16; i++) {
+          printf("%02x", p[i]);
+        }
+        printf("\n");
         p += 32;
         if (hs->symmetric_state.isKeyed) {
           p += 16;
@@ -364,6 +370,7 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
   return p - message_buffer;
 }
 
+// TODO: return ssize_t?
 int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
                       u8 *payload_buffer, strobe_s *client_s,
                       strobe_s *server_s) {
@@ -404,10 +411,17 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
         if (message_len < ciphertext_len) {
           return -1;
         }
+
+        // TODO: this is not working
+        printf("ciphertext to decrypt\n");
+        for (int i = 0; i < ciphertext_len; i++) {
+          printf("%02x", message[i]);
+        }
+        printf("\n");
         bool res = _disco_DecryptAndHash(&(hs->symmetric_state), message,
                                          ciphertext_len);
         if (!res) {
-          return false;
+          return -1;
         }
         memcpy(hs->rs.pub, message, 32);
         message_len -= ciphertext_len;

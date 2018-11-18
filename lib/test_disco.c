@@ -108,13 +108,14 @@ void test_NX() {
   // create second handshake message
   strobe_s s_write;
   strobe_s s_read;
-  out_len = disco_WriteMessage(&hs_server, (u8 *)"hello hello", 5, out, &s_read,
-                               &s_write);
+  out_len = disco_WriteMessage(&hs_server, (u8 *)"hello hello", 12, out,
+                               &s_read, &s_write);
   if (out_len < 0) {
     printf("can't write handshake message\n");
     abort();
   }
 
+  // should be initialized
   assert(s_write.initialized && s_read.initialized);
 
   // process second handshake message
@@ -126,6 +127,7 @@ void test_NX() {
     abort();
   }
 
+  // should be initialized
   assert(c_write.initialized && c_read.initialized);
 
   // trying to send a post-handshake message

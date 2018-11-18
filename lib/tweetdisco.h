@@ -38,7 +38,7 @@ typedef struct handshakePattern {
 } handshakePattern;
 
 #define HANDSHAKE_N                                                           \
-  (handshakePattern) {                                                        \
+  (const handshakePattern) {                                                  \
     .name = "N", .pre_message_patterns =                                      \
                      (token[]){token_end_turn, token_s, token_end_handshake}, \
     .message_patterns = (token[]) {                                           \
@@ -46,7 +46,7 @@ typedef struct handshakePattern {
     }                                                                         \
   }
 #define HANDSHAKE_K                                                       \
-  (handshakePattern) {                                                    \
+  (const handshakePattern) {                                              \
     .name = "K",                                                          \
     .pre_message_patterns =                                               \
         (token[]){token_s, token_end_turn, token_s, token_end_handshake}, \
@@ -55,7 +55,7 @@ typedef struct handshakePattern {
     }                                                                     \
   }
 #define HANDSHAKE_X                                                           \
-  (handshakePattern) {                                                        \
+  (const handshakePattern) {                                                  \
     .name = "X", .pre_message_patterns =                                      \
                      (token[]){token_end_turn, token_s, token_end_handshake}, \
     .message_patterns = (token[]) {                                           \
@@ -63,7 +63,7 @@ typedef struct handshakePattern {
     }                                                                         \
   }
 #define HANDSHAKE_NK                                                           \
-  (handshakePattern) {                                                         \
+  (const handshakePattern) {                                                   \
     .name = "NK", .pre_message_patterns =                                      \
                       (token[]){token_end_turn, token_s, token_end_handshake}, \
     .message_patterns = (token[]) {                                            \
@@ -72,7 +72,7 @@ typedef struct handshakePattern {
     }                                                                          \
   }
 #define HANDSHAKE_KK                                                      \
-  (handshakePattern) {                                                    \
+  (const handshakePattern) {                                              \
     .name = "KK",                                                         \
     .pre_message_patterns =                                               \
         (token[]){token_s, token_end_turn, token_s, token_end_handshake}, \
@@ -82,7 +82,7 @@ typedef struct handshakePattern {
     }                                                                     \
   }
 #define HANDSHAKE_NX                                                      \
-  (handshakePattern) {                                                    \
+  (const handshakePattern) {                                              \
     .name = "NX", .pre_message_patterns = (token[]){token_end_handshake}, \
     .message_patterns = (token[]) {                                       \
       token_e, token_end_turn, token_e, token_ee, token_s, token_es,      \
@@ -90,7 +90,7 @@ typedef struct handshakePattern {
     }                                                                     \
   }
 #define HANDSHAKE_KX                                                           \
-  (handshakePattern) {                                                         \
+  (const handshakePattern) {                                                   \
     .name = "KX",                                                              \
     .pre_message_patterns = (token[]){token_s, token_end_handshake},           \
     .message_patterns = (token[]) {                                            \
@@ -99,7 +99,7 @@ typedef struct handshakePattern {
     }                                                                          \
   }
 #define HANDSHAKE_XK                                                           \
-  (handshakePattern) {                                                         \
+  (const handshakePattern) {                                                   \
     .name = "XK", .pre_message_patterns =                                      \
                       (token[]){token_end_turn, token_s, token_end_handshake}, \
     .message_patterns = (token[]) {                                            \
@@ -108,7 +108,7 @@ typedef struct handshakePattern {
     }                                                                          \
   }
 #define HANDSHAKE_IK                                                           \
-  (handshakePattern) {                                                         \
+  (const handshakePattern) {                                                   \
     .name = "IK", .pre_message_patterns =                                      \
                       (token[]){token_end_turn, token_s, token_end_handshake}, \
     .message_patterns = (token[]) {                                            \
@@ -118,7 +118,7 @@ typedef struct handshakePattern {
   }
 
 #define HANDSHAKE_XX                                                      \
-  (handshakePattern) {                                                    \
+  (const handshakePattern) {                                              \
     .name = "XX", .pre_message_patterns = (token[]){token_end_handshake}, \
     .message_patterns = (token[]) {                                       \
       token_e, token_end_turn, token_e, token_ee, token_s, token_es,      \
@@ -127,7 +127,7 @@ typedef struct handshakePattern {
   }
 
 #define HANDSHAKE_IX                                                          \
-  (handshakePattern) {                                                        \
+  (const handshakePattern) {                                                  \
     .name = "IX", .pre_message_patterns = (token[]){token_end_handshake},     \
     .message_patterns = (token[]) {                                           \
       token_e, token_s, token_end_turn, token_e, token_ee, token_se, token_s, \
