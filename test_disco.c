@@ -64,16 +64,20 @@ void test_disco() {
 
   // trying to send a post-handshake message
   u8 pt_in_place[] =
-      "Us little brogammers we like to brogamme on our motorbikes yeah "
-      "yeah "
-      "yeah\0xxxxxxxxxxxxxxxx";
-  disco_EncryptInPlace(&c_write, pt_in_place, 83, 83 + 16);
+      "Us little brogammers we like to brogamme on our motorbikes yeah ";
+  u8 *ct_and_mac = (u8 *)malloc(sizeof(pt_in_place) + 16);
+  memcpy(ct_and_mac, pt_in_place, sizeof(pt_in_place));
 
-  if (disco_DecryptInPlace(&s_read, pt_in_place, 83 + 16) == false) {
+  disco_EncryptInPlace(&c_write, ct_and_mac, sizeof(pt_in_place),
+                       sizeof(pt_in_place) + 16);
+
+  // decrypt
+  if (disco_DecryptInPlace(&s_read, ct_and_mac, sizeof(pt_in_place) + 16) ==
+      false) {
     printf("cannot decrypt in place");
     abort();
   }
-  printf("final decrypt in place: %s\n", pt_in_place);
+  printf("final decrypt in place: %s\n", ct_and_mac);
 }
 
 int main() {
