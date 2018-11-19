@@ -83,6 +83,16 @@ bool _disco_DecryptAndHash(symmetricState *ss, u8 *ciphertext,
     if (ciphertext_len < 16) {
       return false;
     }
+
+    /*
+
+    strobe_operate(strobe, TYPE_ENC | FLAG_I, ciphertext, ciphertext_len - 16,
+                   false);
+    // verify authentication tag
+    ssize_t res = strobe_operate(strobe, TYPE_MAC | FLAG_I,
+                                 ciphertext + ciphertext_len - 16, 16, false);
+     */
+
     strobe_operate(&(ss->strobe), TYPE_ENC | FLAG_I, ciphertext,
                    ciphertext_len - 16, false);
 
@@ -268,24 +278,27 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
   u8 *p = message_buffer;
   u8 DH_result[32];
 
-  token current_token = token_e;
-  u8 token_counter;
-  for (token_counter = 0; (current_token != token_end_handshake) &&
-                              (current_token != token_end_turn);
-       token_counter++) {
-    current_token = hs->message_patterns[token_counter];
-
-    switch (current_token) {
+  // state machine
+  token *current_token = hs->message_patterns;
+  while (true) {
+    switch (*current_token) {
       case token_e:
         printf("e token\n");
         assert(!hs->e.isSet);
         disco_generateKeyPair(&(hs->e));
         memcpy(p, hs->e.pub, 32);
+        printf("e generated:");
+        for (int i = 0; i < 32; i++) {
+          printf("%02x", hs->e.pub[i]);
+        }
+        printf("\n");
         p += 32;
         _disco_MixHash(&(hs->symmetric_state), hs->e.pub, 32);
         break;
       case token_s:
         printf("s token\n");
+        printf("strobe state before encrypting s\n");
+        strobe_print(&(hs->symmetric_state.strobe));
         assert(hs->s.isSet);
         memcpy(p, hs->s.pub, 32);
         _disco_EncryptAndHash(&(hs->symmetric_state), p, 32);
@@ -301,10 +314,27 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
         break;
       case token_ee:
         printf("ee token\n");
+        printf("strobe state before ee\n");
+        strobe_print(&(hs->symmetric_state.strobe));
+        printf("my e:");
+        for (int i = 0; i < 32; i++) {
+          printf("%02x", hs->e.pub[i]);
+        }
+        printf("\ntheir e:");
+        for (int i = 0; i < 32; i++) {
+          printf("%02x", hs->re.pub[i]);
+        }
+        printf("\n");
         // TODO: does this really replaces everything in DH_Result?
         _disco_DH(hs->e, hs->re, DH_result);
         _disco_MixKey(&(hs->symmetric_state), DH_result);
         // TODO: reset DH_result?
+        //
+        printf("strobe state after ee\n");
+        for (int i = 0; i < sizeof(hs->symmetric_state.strobe.state); i++) {
+          printf("%02x", hs->symmetric_state.strobe.state.b[i]);
+        }
+        printf("\n");
         break;
       case token_es:
         printf("es token\n");
@@ -332,22 +362,28 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
       case token_end_turn:
         printf("end of turn\n");
         hs->sending = !hs->sending;
-        break;
+        hs->message_patterns = current_token + 1;
+        goto payload;
       case token_end_handshake:
         printf("end of handshake\n");
         hs->handshake_done = true;
-        break;
+        goto payload;
       default:
         assert(false);
     }
+    current_token++;
   }
-
+payload:
   // Payload
   assert(!(payload == NULL && payload_len != 0));
   if (payload != NULL) {
     memcpy(p, payload, payload_len);
   }
+
   _disco_EncryptAndHash(&(hs->symmetric_state), p, payload_len);
+
+  printf("strobe state after encrypting payload\n");
+  strobe_print(&(hs->symmetric_state.strobe));
 
   p += payload_len;
   if (hs->symmetric_state.isKeyed) {
@@ -355,13 +391,11 @@ int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
   }
 
   // Split?
-  if (current_token == token_end_handshake) {
+  if (hs->handshake_done == true) {
     printf("spliting\n");
     _disco_Split(&(hs->symmetric_state), client_s, server_s);
     hs->message_patterns = NULL;
     _disco_Destroy(hs);
-  } else {
-    hs->message_patterns += token_counter + 1;
   }
 
   // return length of what was written into buffer
@@ -379,14 +413,10 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
   assert(hs->message_patterns != NULL);
   u8 DH_result[32];
 
-  token current_token = token_e;
-  u8 token_counter;
-  for (token_counter = 0; (current_token != token_end_handshake) &&
-                              (current_token != token_end_turn);
-       token_counter++) {
-    current_token = hs->message_patterns[token_counter];
-
-    switch (current_token) {
+  // state machine
+  token *current_token = hs->message_patterns;
+  while (true) {
+    switch (*current_token) {
       case token_e:
         printf("e token\n");
         if (message_len < 32) {
@@ -394,6 +424,11 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
         }
         assert(!hs->re.isSet);
         memcpy(hs->re.pub, message, 32);
+        printf("e received:\n");
+        for (int i = 0; i < 32; i++) {
+          printf("%02x", hs->re.pub[i]);
+        }
+        printf("\n");
         message_len -= 32;
         message += 32;
         hs->re.isSet = true;
@@ -401,6 +436,13 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
         break;
       case token_s:
         printf("s token\n");
+
+        printf("strobe state before decrypting s\n");
+        for (int i = 0; i < sizeof(hs->symmetric_state.strobe.state); i++) {
+          printf("%02x", hs->symmetric_state.strobe.state.b[i]);
+        }
+        printf("\n");
+
         assert(!hs->s.isSet);
         int ciphertext_len = 32;
         if (hs->symmetric_state.isKeyed) {
@@ -410,7 +452,6 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
           return -1;
         }
 
-        // TODO: this is not working
         printf("ciphertext to decrypt\n");
         for (int i = 0; i < ciphertext_len; i++) {
           printf("%02x", message[i]);
@@ -428,10 +469,28 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
         break;
       case token_ee:
         printf("ee token\n");
+        printf("strobe state before ee\n");
+        strobe_print(&(hs->symmetric_state.strobe));
+        printf("my e:");
+        for (int i = 0; i < 32; i++) {
+          printf("%02x", hs->e.pub[i]);
+        }
+        printf("\ntheir e:");
+        for (int i = 0; i < 32; i++) {
+          printf("%02x", hs->re.pub[i]);
+        }
+        printf("\n");
+
         // TODO: does this really replaces everything in DH_Result?
         _disco_DH(hs->e, hs->re, DH_result);
         _disco_MixKey(&(hs->symmetric_state), DH_result);
         // TODO: reset DH_result?
+
+        printf("strobe state after ee\n");
+        for (int i = 0; i < sizeof(hs->symmetric_state.strobe.state); i++) {
+          printf("%02x", hs->symmetric_state.strobe.state.b[i]);
+        }
+        printf("\n");
         break;
       case token_es:
         printf("es token\n");
@@ -459,15 +518,18 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
       case token_end_turn:
         printf("end turn token\n");
         hs->sending = !hs->sending;
-        break;
+        hs->message_patterns = current_token + 1;
+        goto payload;
       case token_end_handshake:
         printf("end handshake token\n");
         hs->handshake_done = true;
-        break;
+        goto payload;
       default:
         assert(false);
     }
+    current_token++;
   }
+payload:
 
   printf("so far so good, finished reading all tokens\n");
 
@@ -482,6 +544,10 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
   if (!res) {
     return -1;
   }
+
+  printf("strobe state after decrypting payload\n");
+  strobe_print(&(hs->symmetric_state.strobe));
+
   // the real length of the message (minus tag)
   if (hs->symmetric_state.isKeyed) {
     message_len -= 16;
@@ -491,13 +557,11 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
   memcpy(payload_buffer, message, message_len);
 
   // Split?
-  if (current_token == token_end_handshake) {
+  if (hs->handshake_done == true) {
     printf("splitting!\n");
     _disco_Split(&(hs->symmetric_state), client_s, server_s);
     hs->message_patterns = NULL;
     _disco_Destroy(hs);
-  } else {
-    hs->message_patterns += token_counter + 1;
   }
 
   // return length of what was read into buffer
@@ -535,7 +599,7 @@ bool disco_DecryptInPlace(strobe_s *strobe, u8 *ciphertext,
   ssize_t res = strobe_operate(strobe, TYPE_MAC | FLAG_I,
                                ciphertext + ciphertext_len - 16, 16, false);
   // bad authentication tag
-  if (res == -1) {
+  if (res < 0) {
     return false;
     // TODO: should we destroy the strobe object at this point?
   }

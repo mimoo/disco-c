@@ -172,9 +172,5 @@ void disco_generateKeyPair(keyPair *kp);
 // post handshake
 void disco_EncryptInPlace(strobe_s *strobe, u8 *plaintext, size_t plaintext_len,
                           size_t plaintext_capacity);
-void disco_Encrypt(strobe_s *strobe, u8 *plaintext, size_t plaintext_len,
-                   u8 **ciphertext, size_t *ciphertext_len);
 bool disco_DecryptInPlace(strobe_s *strobe, u8 *ciphertext,
                           size_t ciphertext_len);
-bool disco_Decrypt(strobe_s *strobe, u8 *ciphertext, size_t ciphertext_len,
-                   u8 **plaintext, size_t *plaintext_len);

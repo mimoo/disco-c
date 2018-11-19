@@ -93,6 +93,10 @@ void test_NX() {
 
   // debug
   printf("sent %d bytes\n", out_len);
+  for (int i = 0; i < out_len; i++) {
+    printf("%02x", out[i]);
+  }
+  printf("\n");
 
   // process the first handshake message → e, es
   u8 in[500];
@@ -104,8 +108,12 @@ void test_NX() {
 
   // debug
   printf("received %d bytes:%s\n", in_len, in);
+  printf("hs_client and hs_server state after first trip\n");
+  strobe_print(&(hs_client.symmetric_state.strobe));
+  strobe_print(&(hs_server.symmetric_state.strobe));
 
   // create second handshake message
+  printf("\n\npreparing second handshake message ->\n\n");
   strobe_s s_write;
   strobe_s s_read;
   out_len = disco_WriteMessage(&hs_server, (u8 *)"hello hello", 12, out,
@@ -118,7 +126,15 @@ void test_NX() {
   // should be initialized
   assert(s_write.initialized && s_read.initialized);
 
+  // debug
+  printf("sent %d bytes:\n", out_len);
+  for (int i = 0; i < out_len; i++) {
+    printf("%02x", out[i]);
+  }
+  printf("\n");
+
   // process second handshake message
+  printf("\n\nparsing second handshake message <-\n\n");
   strobe_s c_write;
   strobe_s c_read;
   in_len = disco_ReadMessage(&hs_client, out, out_len, in, &c_write, &c_read);
@@ -126,6 +142,9 @@ void test_NX() {
     printf("can't read handshake message\n");
     abort();
   }
+
+  // debug
+  printf("received %d bytes:%s\n", in_len, in);
 
   // should be initialized
   assert(c_write.initialized && c_read.initialized);
@@ -152,9 +171,9 @@ int main() {
   // doing a loop coz I have a bug SOMETIMES
   for (int j = 0;; j++) {
     printf("iteration #%d\n", j);
-    printf("testing N\n");
+    printf("\n\ntesting N\n\n");
     test_N();
-    printf("testing NX\n");
+    printf("\n\ntesting NX\n\n");
     test_NX();
   }
 
