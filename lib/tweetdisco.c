@@ -443,7 +443,7 @@ int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
         }
         printf("\n");
 
-        assert(!hs->s.isSet);
+        assert(!hs->rs.isSet);
         int ciphertext_len = 32;
         if (hs->symmetric_state.isKeyed) {
           ciphertext_len += 16;
