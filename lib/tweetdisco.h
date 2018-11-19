@@ -1,7 +1,8 @@
 /**
  * @brief The main Disco Library. This file needs to be included.
  */
-#pragma once
+#ifndef __DISCO_H__
+#define __DISCO_H__
 
 #include "tweetstrobe.h"
 
@@ -174,3 +175,5 @@ void disco_EncryptInPlace(strobe_s *strobe, uint8_t *plaintext,
                           size_t plaintext_len, size_t plaintext_capacity);
 bool disco_DecryptInPlace(strobe_s *strobe, uint8_t *ciphertext,
                           size_t ciphertext_len);
+
+#endif /* __DISCO_H__ */
