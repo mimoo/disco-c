@@ -1,6 +1,6 @@
 # EmbeddedDisco
 
-**EmbeddedDisco** is a modern protocol and a cryptographic library in C. It offers different ways of encrypting communications, as well as different cryptographic primitives for all of an application's needs. It targets simplicity and minimalism, with around 1,000 lines-of-code and a design based solely on the SHA-3 and Curve25519 cryptographic primitives.
+**EmbeddedDisco** is a modern protocol and a cryptographic library in C. It offers different ways of encrypting communications, as well as different cryptographic primitives for all of an application's needs. It targets simplicity and minimalism, with around 1,000 lines-of-code, not a single malloc and a design based solely on the SHA-3 and Curve25519 cryptographic primitives.
 
 This repository is light on detail as it is actively under developement. To have a more gentle introduction, [check this blogpost](https://www.cryptologie.net/article/432/introducing-disco/) in C. **The state of this library is quite experimental. Please do not use it in production.** [A more mature implementation of Disco exists in Go](http://discocrypto.com/#/). More implementations are [listed here](https://github.com/mimoo/disco/issues/4).
 
@@ -128,7 +128,7 @@ Here are a list of TODOs:
 
 - [ ] should Disco use [Strobe's Schnorr signature](https://strobe.sourceforge.io/papers/) instead of ed25519? It would be smaller in code size. The problem is that ed25519 is supported in more languages and is well accepted as a standard. On the other hand ed25519 uses SHA-512 which we don't want to support.
 - [ ] write good documentation. Doxygen is really ugly. Is there a better alternative?
-- [ ] figure out if *randombytes* from *nacl* is enough, check what [libhydrogen]() does
+- [ ] figure out if *randombytes* from *nacl* is enough, check what [libhydrogen](https://github.com/jedisct1/libhydrogen) does
 - [ ] go through each TODO in the code
 - [ ] enforce a maximum message length for the readmessage/writemessage functions? (Noise's specification has a limit of 65535 bytes I believe?)
 - [ ] check that I don't crash the application unecessarily (and return errors whenever possible)
