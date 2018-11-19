@@ -267,9 +267,9 @@ void disco_Initialize(handshakeState *hs, const handshakePattern hp,
 // * have a fixed sized buffer for receiving messages during the handshake
 // * same buffer?
 // * reset buffer to 0 everytime right before writing to it?
-int disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
-                       u8 *message_buffer, strobe_s *client_s,
-                       strobe_s *server_s) {
+ssize_t disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
+                           u8 *message_buffer, strobe_s *client_s,
+                           strobe_s *server_s) {
   assert(hs != NULL && payload != NULL && message_buffer != NULL);
   assert(hs->handshake_done == false && hs->sending == true);
 
@@ -402,10 +402,12 @@ payload:
   return p - message_buffer;
 }
 
-// TODO: return ssize_t?
-int disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
-                      u8 *payload_buffer, strobe_s *client_s,
-                      strobe_s *server_s) {
+// disco_ReadMessage reads and process the next message.
+// TODO: this is not the nicest API at the moment because the caller does not
+// know how much size it should allocate to the payload_buffer argument
+ssize_t disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
+                          u8 *payload_buffer, strobe_s *client_s,
+                          strobe_s *server_s) {
   assert(hs != NULL && message != NULL && payload_buffer != NULL);
   assert(hs->handshake_done == false && hs->sending == false);
 
