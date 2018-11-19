@@ -1,3 +1,6 @@
+/**
+ * @brief The main Disco Library. This file needs to be included.
+ */
 #pragma once
 
 #include "tweetstrobe.h"

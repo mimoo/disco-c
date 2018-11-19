@@ -1,10 +1,10 @@
 # EmbeddedDisco
 
-**EmbeddedDisco** is a modern protocol and a cryptographic library in C. It offers different ways of encrypting communications, as well as different cryptographic primitives for all of an application's needs. It targets simplicity and minimalism, with around 1,000 lines-of-code, not a single malloc and a design based solely on the SHA-3 and Curve25519 cryptographic primitives.
+**EmbeddedDisco** is a modern protocol and a cryptographic library in C. It offers different ways of encrypting communications, as well as different cryptographic primitives for all of an application's needs. It targets simplicity and minimalism, with around 1,000 lines-of-code, not a single malloc and a design based solely on the well-accepted SHA-3 and Curve25519 cryptographic primitives.
 
-This repository is light on detail as it is actively under developement. To have a more gentle introduction, [check this blogpost](https://www.cryptologie.net/article/432/introducing-disco/) in C. **The state of this library is quite experimental. Please do not use it in production.** [A more mature implementation of Disco exists in Go](http://discocrypto.com/#/). More implementations are [listed here](https://github.com/mimoo/disco/issues/4).
+This repository is light on detail as it is actively under developement. To have a more gentle introduction, [check this blogpost](https://www.cryptologie.net/article/432/introducing-disco/). **The state of this library is quite experimental. Please do not use it in production.** [A more mature implementation of Disco exists in Go](http://discocrypto.com/#/). More implementations are [listed here](https://github.com/mimoo/disco/issues/4).
 
-If you need help to play with the library, [contact me](https://www.cryptologie.net/contact) or post an issue :) I'm happy to help.
+In order to make this library more stable I need your help. Play with the library, [contact me here](https://www.cryptologie.net/contact), provide feedback, post issues :) I'm happy to help.
 
 ## Example
 

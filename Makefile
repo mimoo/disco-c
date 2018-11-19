@@ -1,6 +1,6 @@
 CFLAGS= -g -O1 -Wall -Werror -std=c11 -fsanitize=address
 
-.PHONY: all clean test
+.PHONY: all clean test test_strobe
 
 # This is a draft of a Makefile
 # it contains stuff like -g and -std=c11 and -fsanitize=address that are not
@@ -37,21 +37,6 @@ test: lib/test_disco.c tweetdisco.o tweetstrobe.o tweet25519.o randombytes.o
 test_strobe: lib/test_strobe.c tweetstrobe.o
 	$(CC) $(CFLAGS) lib/test_strobe.c -c -o test.o
 	$(CC) $(CFLAGS) test.o tweetstrobe.o -o test
-	./test
-
-# delete this when done v
-# our modification but still has the io/attach feature of strobe
-test_strobe_io: lib/test_strobe_io.c
-	cd strobe && make tweetstrobe_io.o && mv tweetstrobe_io.o ../
-	$(CC) $(CFLAGS) lib/test_strobe_io.c -I strobe -c -o test.o
-	$(CC) $(CFLAGS) test.o tweetstrobe_io.o -o test
-	./test
-
-# the real strobe
-test_real_strobe: lib/test_real_strobe.c
-	cd strobe && make strobe.o && make x25519.o && mv strobe.o ../ && mv x25519.o ../
-	$(CC) $(CFLAGS) lib/test_real_strobe.c -I strobe -c -o test.o
-	$(CC) $(CFLAGS) test.o strobe.o x25519.o -o test
 	./test
 
 clean:

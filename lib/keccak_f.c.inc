@@ -24,34 +24,26 @@
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 static inline kword_t eswap_letoh(kword_t w) { return w; }
 static inline kword_t eswap_htole(kword_t w) { return w; }
-static inline uint16_t eswap_letoh_16(uint16_t w) { return w; }
-static inline uint16_t eswap_htole_16(uint16_t w) { return w; }
-static inline uint32_t eswap_letoh_32(uint32_t w) { return w; }
-static inline uint32_t eswap_htole_32(uint32_t w) { return w; }
-static inline uint64_t eswap_letoh_64(uint64_t w) { return w; }
-static inline uint64_t eswap_htole_64(uint64_t w) { return w; }
-static inline strobe_length_t eswap_letoh_sl(strobe_length_t w) { return w; }
-static inline strobe_length_t eswap_htole_sl(strobe_length_t w) { return w; }
 #else
 #error "Fix eswap() on non-little-endian machine"
 #endif
 
 /* Could lose this to save size, maybe, depends on arch */
-#ifndef STROBE_OPT_RC_TABLE
-#define STROBE_OPT_RC_TABLE 1
+#ifndef KECCAK_OPT_RC_TABLE
+#define KECCAK_OPT_RC_TABLE 1
 #endif
 
 /* Helper macros to unroll the permutation. */
 #define REPEAT5(e) e e e e e
-#if STROBE_OPT_FOR_SIZE // Size + 0 bytes, speed x 1/2
+#if KECCAK_OPT_FOR_SIZE // Size + 0 bytes, speed x 1/2
 #    define FOR51(v, e) v = 0; REPEAT5(e; v += 1;)
 #    define FOR55(v, e) for (v=0; v<25; v+= 5) { e; }
 #    define REPEAT24(e) {int _j=0; for (_j=0; _j<24; _j++) { e }}
-#elif STROBE_OPT_FOR_SPEED // Size + 600 bytes, speed x1
+#elif KECCAK_OPT_FOR_SPEED // Size + 600 bytes, speed x1
 #    define FOR51(v, e) v = 0; REPEAT5(e; v += 1;)
 #    define FOR55(v, e) v = 0; REPEAT5(e; v += 5;)
 #    define REPEAT24(e) e e e e e e e e e e e e e e e e e e e e e e e e
-#elif STROBE_OPT_FOR_SIZE_AGGRESSIVE // Terrible.  Actually makes things bigger
+#elif KECCAK_OPT_FOR_SIZE_AGGRESSIVE // Terrible.  Actually makes things bigger
 #    define FOR51(v, e) for (v=0; v<5; v++) { e; }
 #    define FOR55(v, e) for (v=0; v<25; v+= 5) { e; }
 #    define REPEAT24(e) {int _j=0; for (_j=0; _j<24; _j++) { e }}
@@ -61,13 +53,13 @@ static inline strobe_length_t eswap_htole_sl(strobe_length_t w) { return w; }
 #    define REPEAT24(e) e e e e e e e e e e e e e e e e e e e e e e e e
 #endif
 
-#if STROBE_INTEROP_F_BITS == 1600
+#if KECCAK_INTEROP_F_BITS == 1600
 #define NROUNDS 24
-#elif STROBE_INTEROP_F_BITS == 800
+#elif KECCAK_INTEROP_F_BITS == 800
 #define NROUNDS 22
-#elif STROBE_INTEROP_F_BITS == 400
+#elif KECCAK_INTEROP_F_BITS == 400
 #define NROUNDS 20
-#elif sSTROBE_INTEROP_F_BITS == 200
+#elif sKECCAK_INTEROP_F_BITS == 200
 #define NROUNDS 18
 #else
 #error "Only implementing KeccakF[200,400,800,1600]'"
