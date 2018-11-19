@@ -1,8 +1,10 @@
-# TweetDisco
+# EmbeddedDisco
 
-This is an implementation of [Disco](https://www.cryptologie.net/article/432/introducing-disco/) in C. **This code is quite experimental. Please do not use in production.** [A more mature implementation of Disco exists in Go](http://discocrypto.com/#/).
+**EmbeddedDisco** is a modern protocol and a cryptographic library in C. It offers different ways of encrypting communications, as well as different cryptographic primitives for all of an application's needs. It targets simplicity and minimalism, with around 1,000 lines-of-code and a design based solely on the SHA-3 and Curve25519 cryptographic primitives.
 
-It is called tweetdisco because the implementation's goal is code size, but it is unfortunately not tweetable :)
+This repository is light on detail as it is actively under developement. To have a more gentle introduction, [check this blogpost](https://www.cryptologie.net/article/432/introducing-disco/) in C. **The state of this library is quite experimental. Please do not use it in production.** [A more mature implementation of Disco exists in Go](http://discocrypto.com/#/). More implementations are [listed here](https://github.com/mimoo/disco/issues/4).
+
+If you need help to play with the library, [contact me](https://www.cryptologie.net/contact) or post an issue :) I'm happy to help.
 
 ## Example
 
@@ -113,26 +115,21 @@ int main() {
 }
 ```
 
-## TODO
+## More
 
-It is optimized for code-size at the moment, mostly because I suck at optimizing things:
+The library is currently optimized for code-size. It was done by:
 
-* I re-wrote [Strobe-C]() to make it smaller in size and simpler.
-* I'm using [tweetNaCl's X25519]() implementation. But why not Mike Hamburg's one?
-* I'm using `randombytes()` from [NaCl]()
-* I'm using Mike Hamburg's implementation of Keccak-f which is based on [TweetFIPS202]()
-* I should probably use Strobe's suggestion for signature instead of ed25519
-    - (because ed25519 requires a different hash function)
+1. re-writing [Strobe-C](https://strobe.sourceforge.io) to make it smaller in size, simpler and closer to the official specification.
+2. I'm using [tweetNaCl's X25519](https://tweetnacl.cr.yp.to/) implementation. Strobe has one from Mike Hamburg as well. I need to compare. This can be replaced by more robust implementations for hardware devices that want to implement masking and other side-channel mitigation techniques.
+3. I'm using `randombytes()` from [NaCl](https://nacl.cr.yp.to/). The idea here is that any platform can provide a `randombytes` function.
+4. I'm using Mike Hamburg's implementation of Keccak-f which is based on [TweetFIPS202](https://keccak.team/2015/tweetfips202.html). This can be replaced by an application's own optimzed implementation of Keccak-f if developers are willing to increase the code size and decrease the readability.
 
-- [x] re-write `tweetdisco` with `tweetstrobe` new `strobe_operate()`
-- [ ] write good doc
-- [ ] rename *tweetdisco* to *embeddedDisco* or something? (tweet might have a bad connotation)
-- [ ] extract *curve25519* from *tweetnacl*, because that's all I really need 
-- [ ] figure out if *randombytes* from *nacl* is enough, check what *libhydrogen* does
-- [ ] should I re-write "everything" with `const`?
-- [ ] why does sprintf and strlen use "signed" chars?
-- [ ] figure out a maximum message length for the readmessage/writemessage functions (use size_t instead of int?)
-- [x] `assert` is probably removed by optimizations, so I should prob avoid using it in important places?
-- [ ] check that I don't crash the application unecessarily (and return -1 or something instead)
-- [ ] accept an external API for generating randomness instead of generating randomness ourselves? or have it XOR'ed with ours?
+Here are a list of TODOs:
+
+- [ ] should Disco use [Strobe's Schnorr signature](https://strobe.sourceforge.io/papers/) instead of ed25519? It would be smaller in code size. The problem is that ed25519 is supported in more languages and is well accepted as a standard. On the other hand ed25519 uses SHA-512 which we don't want to support.
+- [ ] write good documentation. Doxygen is really ugly. Is there a better alternative?
+- [ ] figure out if *randombytes* from *nacl* is enough, check what [libhydrogen]() does
+- [ ] go through each TODO in the code
+- [ ] enforce a maximum message length for the readmessage/writemessage functions? (Noise's specification has a limit of 65535 bytes I believe?)
+- [ ] check that I don't crash the application unecessarily (and return errors whenever possible)
 - [ ] cleanup make file, remove -g and ASAN
