@@ -6,7 +6,7 @@ It is called tweetdisco because the implementation's goal is code size, but it i
 
 ## Example
 
-Here's how you setup a server:
+Here's how you setup a **server** with the `IK` handshake (the server's identity is known to the client; the client advertises it's identity during the handshake):
 
 ```c
 #include "tweetdisco.h"
@@ -28,6 +28,9 @@ int main() {
   if (in_len < 0) {
     abort();
   }
+
+  // validate the client's identity via a whitelist or a public key infrastructure 
+  // or trust-on-first-use, etc.
 
   // create second handshake message ← e, ee, se
   strobe_s s_write;
@@ -53,23 +56,25 @@ int main() {
 }
 ```
 
-Here's how you setup a client:
+Here's how you setup a **client**:
 
 ```c
 #include "tweetdisco.h"
 #include <stdio.h>
 
 int main() {
-  // generate server keypair
+  // generate long-term client keypair
   keyPair client_keypair;
   disco_generateKeyPair(&client_keypair);
 
-  // initialize client
+  // obtain server's key somehow...
   keyPair server_keypair;
   server_keypair.pub = {0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
                         0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01};
+
+  // initialize disco                        
   handshakeState hs_client;
   disco_Initialize(&hs_client, HANDSHAKE_IK, true, NULL, 0, &client_keypair,
                    NULL, &server_keypair, NULL);
