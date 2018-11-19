@@ -11,6 +11,11 @@
 // Crypto
 //
 
+/**
+ * disco_generateKeyPair can be used to generate a X25519 keypair. This is
+ * useful for creating long-term keypairs for a peer.
+ * @kp an initialized keyPair struct. It is over-written by the function.
+ */
 void disco_generateKeyPair(keyPair *kp) {
   crypto_box_keypair(kp->pub, kp->priv);
   kp->isSet = true;
@@ -46,9 +51,9 @@ void getHandshakeHash(symmetricState *ss, uint8_t *result) {
   strobe_operate(&(ss->strobe), TYPE_PRF, result, 32, false);
 }
 
-// two things that are bad here:
-// * out must be of length plaintext_len + 16
-// * this modifies the plaintext
+// note that this function modifies the plaintext in place, and requires the
+// plaintext buffer to have 16 more bytes of capacity for the authentication tag
+// if the symmetric state is keyed
 void encryptAndHash(symmetricState *ss, uint8_t *plaintext,
                     size_t plaintext_len) {
   if (!ss->isKeyed) {
@@ -60,14 +65,8 @@ void encryptAndHash(symmetricState *ss, uint8_t *plaintext,
   }
 }
 
-// bad thing:
-// * the caller needs to check if the ciphertext_len is greater than 16!!!!!!
-// 		- re-read Disco, but the check is actually only for isKeyed =
-// true
-// 		- but it should be for both, when it's not true, we are
-// expecting
-// a
-// key right?
+// note that the decryption occurs in place, and the the result is
+// `ciphertext_len-16` in case the symmetric state is keyed.
 bool decryptAndHash(symmetricState *ss, uint8_t *ciphertext,
                     size_t ciphertext_len) {
   if (!ss->isKeyed) {
@@ -77,15 +76,6 @@ bool decryptAndHash(symmetricState *ss, uint8_t *ciphertext,
     if (ciphertext_len < 16) {
       return false;
     }
-
-    /*
-
-    strobe_operate(strobe, TYPE_ENC | FLAG_I, ciphertext, ciphertext_len - 16,
-                   false);
-    // verify authentication tag
-    ssize_t res = strobe_operate(strobe, TYPE_MAC | FLAG_I,
-                                 ciphertext + ciphertext_len - 16, 16, false);
-     */
 
     strobe_operate(&(ss->strobe), TYPE_ENC | FLAG_I, ciphertext,
                    ciphertext_len - 16, false);
@@ -98,15 +88,13 @@ bool decryptAndHash(symmetricState *ss, uint8_t *ciphertext,
   return true;
 }
 
-// this buffer is zero'ed by strobe when used for the RATCHET operation
-unsigned char ratchet_buffer[16];
-
 // split takes a symmetric state ss, a strobe state s1 and an empty
 // but allocated strobe state s2
 // TODO: perhaps return only s1 if this is a one-way handshake pattern?
 // TODO: how do I ensure that a server don't send msg on a one-way hp?
 void split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
   assert(s1 != NULL && s2 != NULL);
+
   // s1 = our current strobe state
   strobe_clone(&(ss->strobe), s1);
 
@@ -118,6 +106,7 @@ void split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
   strobe_operate(s2, TYPE_AD | FLAG_M, (uint8_t *)"responder", 9, false);
 
   // forward-secrecy
+  unsigned char ratchet_buffer[16];
   strobe_operate(s1, TYPE_RATCHET, ratchet_buffer, 16, false);
   strobe_operate(s2, TYPE_RATCHET, ratchet_buffer, 16, false);
 }
@@ -150,7 +139,6 @@ void destroy(handshakeState *hs) {
   strobe_destroy(&(hs->symmetric_state.strobe));
 }
 
-// disco_Initialize needs the symmetric_state
 /**
  * @brief to initialize a handshakeState
  * disco_Initialize is used to initialize a non-NULL handshakeState with a
@@ -260,12 +248,6 @@ void disco_Initialize(handshakeState *hs, const handshakePattern hp,
   // point to message patterns
   hs->message_patterns = hp.message_patterns;
 }
-
-// idea:
-// * have a fixed sized buffer for sending messages during the handshake
-// * have a fixed sized buffer for receiving messages during the handshake
-// * same buffer?
-// * reset buffer to 0 everytime right before writing to it?
 
 /**
  * disco_WriteMessage takes
@@ -518,8 +500,7 @@ payload:
 }
 
 // disco_EncryptInPlace takes a plaintext and replaces it with the encrypted
-// plaintext
-// and 16 bytes of authentication tag.
+// plaintext and 16 bytes of authentication tag.
 // For this reason, the buffer must have 16 additional bytes than plaintext_len
 // Note that the strobe state is also mutated to reflect the send_ENC and
 // send_MAC operations
@@ -531,8 +512,7 @@ void disco_EncryptInPlace(strobe_s *strobe, uint8_t *plaintext,
 }
 
 // disco_DecryptInPlace decrypts the ciphertext and replaces the buffer's
-// content
-// with the obtained plaintext. the new length will be 16 bytes less
+// content with the obtained plaintext. the new length will be 16 bytes less
 // Note that the strobe state is also mutated to reflect the recv_ENC and
 // recv_MAC operations
 bool disco_DecryptInPlace(strobe_s *strobe, uint8_t *ciphertext,
