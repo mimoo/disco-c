@@ -23,7 +23,7 @@ void disco_generateKeyPair(keyPair *kp) {
   kp->isSet = true;
 }
 
-void _disco_DH(keyPair mine, keyPair theirs, uint8_t *output) {
+void DH(keyPair mine, keyPair theirs, uint8_t *output) {
   crypto_scalarmult(output, mine.priv, theirs.pub);
 }
 
@@ -31,33 +31,33 @@ void _disco_DH(keyPair mine, keyPair theirs, uint8_t *output) {
 // SymmetricState
 //
 
-void _disco_InitializeSymmetric(symmetricState *ss, uint8_t *protocol_name,
-                                size_t protocol_name_len) {
+void initializeSymmetric(symmetricState *ss, uint8_t *protocol_name,
+                         size_t protocol_name_len) {
   strobe_init(&(ss->strobe), protocol_name, protocol_name_len);
 }
 
-void _disco_MixKey(symmetricState *ss, uint8_t *input_key_material) {
+void mixKey(symmetricState *ss, uint8_t *input_key_material) {
   strobe_operate(&(ss->strobe), TYPE_AD, input_key_material, 32, false);
   ss->isKeyed = true;
 }
 
-void _disco_MixHash(symmetricState *ss, uint8_t *data, size_t data_len) {
+void mixHash(symmetricState *ss, uint8_t *data, size_t data_len) {
   strobe_operate(&(ss->strobe), TYPE_AD, data, data_len, false);
 }
 
-void _disco_MixKeyAndHash(symmetricState *ss, uint8_t *input_key_material) {
+void mixKeyAndHash(symmetricState *ss, uint8_t *input_key_material) {
   strobe_operate(&(ss->strobe), TYPE_AD, input_key_material, 32, false);
 }
 
-void _disco_GetHandshakeHash(symmetricState *ss, uint8_t *result) {
+void getHandshakeHash(symmetricState *ss, uint8_t *result) {
   strobe_operate(&(ss->strobe), TYPE_PRF, result, 32, false);
 }
 
 // two things that are bad here:
 // * out must be of length plaintext_len + 16
 // * this modifies the plaintext
-void _disco_EncryptAndHash(symmetricState *ss, uint8_t *plaintext,
-                           size_t plaintext_len) {
+void encryptAndHash(symmetricState *ss, uint8_t *plaintext,
+                    size_t plaintext_len) {
   if (!ss->isKeyed) {
     strobe_operate(&(ss->strobe), TYPE_CLR, plaintext, plaintext_len, false);
   } else {
@@ -75,8 +75,8 @@ void _disco_EncryptAndHash(symmetricState *ss, uint8_t *plaintext,
 // expecting
 // a
 // key right?
-bool _disco_DecryptAndHash(symmetricState *ss, uint8_t *ciphertext,
-                           size_t ciphertext_len) {
+bool decryptAndHash(symmetricState *ss, uint8_t *ciphertext,
+                    size_t ciphertext_len) {
   if (!ss->isKeyed) {
     strobe_operate(&(ss->strobe), TYPE_CLR | FLAG_I, ciphertext, ciphertext_len,
                    false);
@@ -108,11 +108,11 @@ bool _disco_DecryptAndHash(symmetricState *ss, uint8_t *ciphertext,
 
 unsigned char ratchet_buffer[16];
 
-// _disco_Split takes a symmetric state ss, a strobe state s1 and an empty
+// split takes a symmetric state ss, a strobe state s1 and an empty
 // but allocated strobe state s2
 // TODO: perhaps return only s1 if this is a one-way handshake pattern?
 // TODO: how do I ensure that a server don't send msg on a one-way hp?
-void _disco_Split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
+void split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
   assert(s1 != NULL && s2 != NULL);
   // s1 = our current strobe state
   strobe_clone(&(ss->strobe), s1);
@@ -139,7 +139,7 @@ void _disco_Split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
 //
 
 // destroy hs except symmetric state
-void _disco_Destroy(handshakeState *hs) {
+void destroy(handshakeState *hs) {
   int size_to_remove;
   // remove keys
   volatile uint8_t *p;
@@ -182,14 +182,14 @@ void disco_Initialize(handshakeState *hs, const handshakePattern hp,
                            // 40 // TODO: DEFFERED PATTERNS?
   sprintf(protocol_name, "Noise_%s_25519_STROBEv1.0.2", hp.name);
 
-  _disco_InitializeSymmetric(&(hs->symmetric_state), (uint8_t *)protocol_name,
-                             strlen((char *)protocol_name));
+  initializeSymmetric(&(hs->symmetric_state), (uint8_t *)protocol_name,
+                      strlen((char *)protocol_name));
 
   hs->symmetric_state.isKeyed = false;
 
   // prologue
   if (prologue != NULL && prologue_len != 0) {
-    _disco_MixHash(&(hs->symmetric_state), prologue, prologue_len);
+    mixHash(&(hs->symmetric_state), prologue, prologue_len);
   }
 
   // set variables
@@ -230,16 +230,16 @@ void disco_Initialize(handshakeState *hs, const handshakePattern hp,
     switch (current_token) {
       case token_s:
         if ((initiator && direction) || (!initiator && !direction)) {
-          _disco_MixHash(&(hs->symmetric_state), hs->s.pub, 32);
+          mixHash(&(hs->symmetric_state), hs->s.pub, 32);
         } else {
-          _disco_MixHash(&(hs->symmetric_state), hs->rs.pub, 32);
+          mixHash(&(hs->symmetric_state), hs->rs.pub, 32);
         }
         break;
       case token_e:
         if ((initiator && direction) || (!initiator && !direction)) {
-          _disco_MixHash(&(hs->symmetric_state), hs->e.pub, 32);
+          mixHash(&(hs->symmetric_state), hs->e.pub, 32);
         } else {
-          _disco_MixHash(&(hs->symmetric_state), hs->re.pub, 32);
+          mixHash(&(hs->symmetric_state), hs->re.pub, 32);
         }
         break;
       case token_end_turn:
@@ -281,12 +281,12 @@ ssize_t disco_WriteMessage(handshakeState *hs, uint8_t *payload,
         disco_generateKeyPair(&(hs->e));
         memcpy(p, hs->e.pub, 32);
         p += 32;
-        _disco_MixHash(&(hs->symmetric_state), hs->e.pub, 32);
+        mixHash(&(hs->symmetric_state), hs->e.pub, 32);
         break;
       case token_s:
         assert(hs->s.isSet);
         memcpy(p, hs->s.pub, 32);
-        _disco_EncryptAndHash(&(hs->symmetric_state), p, 32);
+        encryptAndHash(&(hs->symmetric_state), p, 32);
         p += 32;
         if (hs->symmetric_state.isKeyed) {
           p += 16;
@@ -294,30 +294,30 @@ ssize_t disco_WriteMessage(handshakeState *hs, uint8_t *payload,
         break;
       case token_ee:
         // TODO: does this really replaces everything in DH_Result?
-        _disco_DH(hs->e, hs->re, DH_result);
-        _disco_MixKey(&(hs->symmetric_state), DH_result);
+        DH(hs->e, hs->re, DH_result);
+        mixKey(&(hs->symmetric_state), DH_result);
         // TODO: reset DH_result?
         //
         break;
       case token_es:
         if (hs->initiator) {
-          _disco_DH(hs->e, hs->rs, DH_result);
+          DH(hs->e, hs->rs, DH_result);
         } else {
-          _disco_DH(hs->s, hs->re, DH_result);
+          DH(hs->s, hs->re, DH_result);
         }
-        _disco_MixKey(&(hs->symmetric_state), DH_result);
+        mixKey(&(hs->symmetric_state), DH_result);
         break;
       case token_se:
         if (hs->initiator) {
-          _disco_DH(hs->s, hs->re, DH_result);
+          DH(hs->s, hs->re, DH_result);
         } else {
-          _disco_DH(hs->e, hs->rs, DH_result);
+          DH(hs->e, hs->rs, DH_result);
         }
-        _disco_MixKey(&(hs->symmetric_state), DH_result);
+        mixKey(&(hs->symmetric_state), DH_result);
         break;
       case token_ss:
-        _disco_DH(hs->s, hs->rs, DH_result);
-        _disco_MixKey(&(hs->symmetric_state), DH_result);
+        DH(hs->s, hs->rs, DH_result);
+        mixKey(&(hs->symmetric_state), DH_result);
         break;
       case token_end_turn:
         hs->sending = !hs->sending;
@@ -338,7 +338,7 @@ payload:
     memcpy(p, payload, payload_len);
   }
 
-  _disco_EncryptAndHash(&(hs->symmetric_state), p, payload_len);
+  encryptAndHash(&(hs->symmetric_state), p, payload_len);
 
   p += payload_len;
   if (hs->symmetric_state.isKeyed) {
@@ -347,9 +347,9 @@ payload:
 
   // Split?
   if (hs->handshake_done == true) {
-    _disco_Split(&(hs->symmetric_state), client_s, server_s);
+    split(&(hs->symmetric_state), client_s, server_s);
     hs->message_patterns = NULL;
-    _disco_Destroy(hs);
+    destroy(hs);
   }
 
   // return length of what was written into buffer
@@ -382,7 +382,7 @@ ssize_t disco_ReadMessage(handshakeState *hs, uint8_t *message,
         message_len -= 32;
         message += 32;
         hs->re.isSet = true;
-        _disco_MixHash(&(hs->symmetric_state), hs->re.pub, 32);
+        mixHash(&(hs->symmetric_state), hs->re.pub, 32);
         break;
       case token_s:
         assert(!hs->rs.isSet);
@@ -394,8 +394,8 @@ ssize_t disco_ReadMessage(handshakeState *hs, uint8_t *message,
           return -1;
         }
 
-        bool res = _disco_DecryptAndHash(&(hs->symmetric_state), message,
-                                         ciphertext_len);
+        bool res =
+            decryptAndHash(&(hs->symmetric_state), message, ciphertext_len);
         if (!res) {
           return -1;
         }
@@ -406,29 +406,29 @@ ssize_t disco_ReadMessage(handshakeState *hs, uint8_t *message,
         break;
       case token_ee:
         // TODO: does this really replaces everything in DH_Result?
-        _disco_DH(hs->e, hs->re, DH_result);
-        _disco_MixKey(&(hs->symmetric_state), DH_result);
+        DH(hs->e, hs->re, DH_result);
+        mixKey(&(hs->symmetric_state), DH_result);
         // TODO: reset DH_result?
         break;
       case token_es:
         if (hs->initiator) {
-          _disco_DH(hs->e, hs->rs, DH_result);
+          DH(hs->e, hs->rs, DH_result);
         } else {
-          _disco_DH(hs->s, hs->re, DH_result);
+          DH(hs->s, hs->re, DH_result);
         }
-        _disco_MixKey(&(hs->symmetric_state), DH_result);
+        mixKey(&(hs->symmetric_state), DH_result);
         break;
       case token_se:
         if (hs->initiator) {
-          _disco_DH(hs->s, hs->re, DH_result);
+          DH(hs->s, hs->re, DH_result);
         } else {
-          _disco_DH(hs->e, hs->rs, DH_result);
+          DH(hs->e, hs->rs, DH_result);
         }
-        _disco_MixKey(&(hs->symmetric_state), DH_result);
+        mixKey(&(hs->symmetric_state), DH_result);
         break;
       case token_ss:
-        _disco_DH(hs->s, hs->rs, DH_result);
-        _disco_MixKey(&(hs->symmetric_state), DH_result);
+        DH(hs->s, hs->rs, DH_result);
+        mixKey(&(hs->symmetric_state), DH_result);
         break;
       case token_end_turn:
         hs->sending = !hs->sending;
@@ -447,8 +447,7 @@ payload:
   if (hs->symmetric_state.isKeyed && message_len < 16) {  // a tag must be here
     return -1;
   }
-  bool res =
-      _disco_DecryptAndHash(&(hs->symmetric_state), message, message_len);
+  bool res = decryptAndHash(&(hs->symmetric_state), message, message_len);
   if (!res) {
     return -1;
   }
@@ -463,9 +462,9 @@ payload:
 
   // Split?
   if (hs->handshake_done == true) {
-    _disco_Split(&(hs->symmetric_state), client_s, server_s);
+    split(&(hs->symmetric_state), client_s, server_s);
     hs->message_patterns = NULL;
-    _disco_Destroy(hs);
+    destroy(hs);
   }
 
   // return length of what was read into buffer
