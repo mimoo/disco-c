@@ -204,3 +204,10 @@ inline void strobe_clone(const strobe_s *src, strobe_s *dst) {
   dst->initiator = src->initiator;
   dst->initialized = src->initialized;
 }
+
+void strobe_print(const strobe_s *strobe) {
+  for (int i = 0; i < sizeof(strobe->state); i++) {
+    printf("%02x", strobe->state.b[i]);
+  }
+  printf("\n");
+}
