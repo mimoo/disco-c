@@ -24,7 +24,7 @@ randombytes.o:
 	$(CC) $(CFLAGS) lib/devurandom.c -c -o randombytes.o
 
 # our modification of strobe
-tweetstrobe.o: lib/tweetstrobe.c lib/tweetstrobe.h lib/keccak_f.c.inc lib/strobe_config.h
+tweetstrobe.o: lib/tweetstrobe.c lib/tweetstrobe.h lib/keccak_f.c.inc 
 	$(CC) $(CFLAGS) lib/tweetstrobe.c -c -o tweetstrobe.o
 
 # test is probably how you should compile your own program
