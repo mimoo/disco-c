@@ -20,8 +20,7 @@ void test_N() {
   uint8_t out[500];
   strobe_s c_write;
   strobe_s c_read;
-  uint8_t text[] = "hey!";
-  int out_len = disco_WriteMessage(&hs_client, text, 5, out, &c_write, &c_read);
+  int out_len = disco_WriteMessage(&hs_client, NULL, 0, out, &c_write, &c_read);
   if (out_len < 0) {
     printf("can't write handshake message\n");
     abort();

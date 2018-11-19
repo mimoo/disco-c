@@ -262,10 +262,15 @@ void disco_Initialize(handshakeState *hs, const handshakePattern hp,
 // * have a fixed sized buffer for receiving messages during the handshake
 // * same buffer?
 // * reset buffer to 0 everytime right before writing to it?
+
+// disco_WriteMessage takes:
+// payload: an optional payload (can be NULL)
 ssize_t disco_WriteMessage(handshakeState *hs, uint8_t *payload,
                            size_t payload_len, uint8_t *message_buffer,
                            strobe_s *client_s, strobe_s *server_s) {
-  assert(hs != NULL && payload != NULL && message_buffer != NULL);
+  assert(hs != NULL && message_buffer != NULL);
+  assert((payload == NULL && payload_len == 0) ||
+         (payload != NULL && payload_len > 0 && payload_len < 65000));
   assert(hs->handshake_done == false && hs->sending == true);
 
   // Fetches and deletes the next message pattern from message_patterns
@@ -365,9 +370,11 @@ ssize_t disco_ReadMessage(handshakeState *hs, uint8_t *message,
                           strobe_s *client_s, strobe_s *server_s) {
   assert(hs != NULL && message != NULL && payload_buffer != NULL);
   assert(hs->handshake_done == false && hs->sending == false);
-
-  // Fetches and deletes the next message pattern from message_patterns
   assert(hs->message_patterns != NULL);
+
+  if (message_len >= 65535) {
+    return -1;
+  }
   uint8_t DH_result[32];
 
   // state machine

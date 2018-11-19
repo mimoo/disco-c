@@ -171,7 +171,7 @@ ssize_t disco_ReadMessage(handshakeState *hs, uint8_t *message,
                           strobe_s *client_s, strobe_s *server_s);
 void disco_generateKeyPair(keyPair *kp);
 
-// post handshake
+// post-handshake
 void disco_EncryptInPlace(strobe_s *strobe, uint8_t *plaintext,
                           size_t plaintext_len, size_t plaintext_capacity);
 bool disco_DecryptInPlace(strobe_s *strobe, uint8_t *ciphertext,
