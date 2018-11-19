@@ -1,4 +1,4 @@
-CFLAGS= -g -O1 -Wall -Werror -std=c11 -fsanitize=address
+CFLAGS= -g -O1 -Wall -Werror -std=c99 -fsanitize=address
 
 .PHONY: all clean test test_strobe
 

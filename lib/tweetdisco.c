@@ -12,6 +12,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 //
 // Crypto
@@ -22,7 +23,7 @@ void disco_generateKeyPair(keyPair *kp) {
   kp->isSet = true;
 }
 
-void _disco_DH(keyPair mine, keyPair theirs, u8 *output) {
+void _disco_DH(keyPair mine, keyPair theirs, uint8_t *output) {
   crypto_scalarmult(output, mine.priv, theirs.pub);
 }
 
@@ -30,32 +31,32 @@ void _disco_DH(keyPair mine, keyPair theirs, u8 *output) {
 // SymmetricState
 //
 
-void _disco_InitializeSymmetric(symmetricState *ss, u8 *protocol_name,
+void _disco_InitializeSymmetric(symmetricState *ss, uint8_t *protocol_name,
                                 size_t protocol_name_len) {
   strobe_init(&(ss->strobe), protocol_name, protocol_name_len);
 }
 
-void _disco_MixKey(symmetricState *ss, u8 *input_key_material) {
+void _disco_MixKey(symmetricState *ss, uint8_t *input_key_material) {
   strobe_operate(&(ss->strobe), TYPE_AD, input_key_material, 32, false);
   ss->isKeyed = true;
 }
 
-void _disco_MixHash(symmetricState *ss, u8 *data, size_t data_len) {
+void _disco_MixHash(symmetricState *ss, uint8_t *data, size_t data_len) {
   strobe_operate(&(ss->strobe), TYPE_AD, data, data_len, false);
 }
 
-void _disco_MixKeyAndHash(symmetricState *ss, u8 *input_key_material) {
+void _disco_MixKeyAndHash(symmetricState *ss, uint8_t *input_key_material) {
   strobe_operate(&(ss->strobe), TYPE_AD, input_key_material, 32, false);
 }
 
-void _disco_GetHandshakeHash(symmetricState *ss, u8 *result) {
+void _disco_GetHandshakeHash(symmetricState *ss, uint8_t *result) {
   strobe_operate(&(ss->strobe), TYPE_PRF, result, 32, false);
 }
 
 // two things that are bad here:
 // * out must be of length plaintext_len + 16
 // * this modifies the plaintext
-void _disco_EncryptAndHash(symmetricState *ss, u8 *plaintext,
+void _disco_EncryptAndHash(symmetricState *ss, uint8_t *plaintext,
                            size_t plaintext_len) {
   if (!ss->isKeyed) {
     strobe_operate(&(ss->strobe), TYPE_CLR, plaintext, plaintext_len, false);
@@ -74,7 +75,7 @@ void _disco_EncryptAndHash(symmetricState *ss, u8 *plaintext,
 // expecting
 // a
 // key right?
-bool _disco_DecryptAndHash(symmetricState *ss, u8 *ciphertext,
+bool _disco_DecryptAndHash(symmetricState *ss, uint8_t *ciphertext,
                            size_t ciphertext_len) {
   if (!ss->isKeyed) {
     strobe_operate(&(ss->strobe), TYPE_CLR | FLAG_I, ciphertext, ciphertext_len,
@@ -120,8 +121,8 @@ void _disco_Split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
   strobe_clone(s1, s2);
 
   //
-  strobe_operate(s1, TYPE_AD | FLAG_M, (u8 *)"initiator", 9, false);
-  strobe_operate(s2, TYPE_AD | FLAG_M, (u8 *)"responder", 9, false);
+  strobe_operate(s1, TYPE_AD | FLAG_M, (uint8_t *)"initiator", 9, false);
+  strobe_operate(s2, TYPE_AD | FLAG_M, (uint8_t *)"responder", 9, false);
 
   for (int i = 0; i < 16; i++) {
     ratchet_buffer[i] = 0;
@@ -141,7 +142,7 @@ void _disco_Split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
 void _disco_Destroy(handshakeState *hs) {
   int size_to_remove;
   // remove keys
-  volatile u8 *p;
+  volatile uint8_t *p;
   if (hs->s.isSet) {
     p = hs->s.priv;
     size_to_remove = 32;
@@ -162,7 +163,7 @@ void _disco_Destroy(handshakeState *hs) {
 
 // disco_Initialize needs the symmetric_state
 void disco_Initialize(handshakeState *hs, const handshakePattern hp,
-                      bool initiator, u8 *prologue, size_t prologue_len,
+                      bool initiator, uint8_t *prologue, size_t prologue_len,
                       keyPair *s, keyPair *e, keyPair *rs, keyPair *re) {
   assert(hs != NULL);
   assert((prologue_len > 0 && prologue != NULL) ||
@@ -181,7 +182,7 @@ void disco_Initialize(handshakeState *hs, const handshakePattern hp,
                            // 40 // TODO: DEFFERED PATTERNS?
   sprintf(protocol_name, "Noise_%s_25519_STROBEv1.0.2", hp.name);
 
-  _disco_InitializeSymmetric(&(hs->symmetric_state), (u8 *)protocol_name,
+  _disco_InitializeSymmetric(&(hs->symmetric_state), (uint8_t *)protocol_name,
                              strlen((char *)protocol_name));
 
   hs->symmetric_state.isKeyed = false;
@@ -223,7 +224,7 @@ void disco_Initialize(handshakeState *hs, const handshakePattern hp,
   // pre-message
   bool direction = true;
   token current_token = token_end_turn;
-  for (u8 token_counter = 0; current_token != token_end_handshake;
+  for (uint8_t token_counter = 0; current_token != token_end_handshake;
        token_counter++) {
     current_token = hp.pre_message_patterns[token_counter];
     switch (current_token) {
@@ -260,16 +261,16 @@ void disco_Initialize(handshakeState *hs, const handshakePattern hp,
 // * have a fixed sized buffer for receiving messages during the handshake
 // * same buffer?
 // * reset buffer to 0 everytime right before writing to it?
-ssize_t disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
-                           u8 *message_buffer, strobe_s *client_s,
-                           strobe_s *server_s) {
+ssize_t disco_WriteMessage(handshakeState *hs, uint8_t *payload,
+                           size_t payload_len, uint8_t *message_buffer,
+                           strobe_s *client_s, strobe_s *server_s) {
   assert(hs != NULL && payload != NULL && message_buffer != NULL);
   assert(hs->handshake_done == false && hs->sending == true);
 
   // Fetches and deletes the next message pattern from message_patterns
   assert(hs->message_patterns != NULL);
-  u8 *p = message_buffer;
-  u8 DH_result[32];
+  uint8_t *p = message_buffer;
+  uint8_t DH_result[32];
 
   // state machine
   token *current_token = hs->message_patterns;
@@ -358,15 +359,15 @@ payload:
 // disco_ReadMessage reads and process the next message.
 // TODO: this is not the nicest API at the moment because the caller does not
 // know how much size it should allocate to the payload_buffer argument
-ssize_t disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
-                          u8 *payload_buffer, strobe_s *client_s,
-                          strobe_s *server_s) {
+ssize_t disco_ReadMessage(handshakeState *hs, uint8_t *message,
+                          size_t message_len, uint8_t *payload_buffer,
+                          strobe_s *client_s, strobe_s *server_s) {
   assert(hs != NULL && message != NULL && payload_buffer != NULL);
   assert(hs->handshake_done == false && hs->sending == false);
 
   // Fetches and deletes the next message pattern from message_patterns
   assert(hs->message_patterns != NULL);
-  u8 DH_result[32];
+  uint8_t DH_result[32];
 
   // state machine
   token *current_token = hs->message_patterns;
@@ -477,8 +478,8 @@ payload:
 // For this reason, the buffer must have 16 additional bytes than plaintext_len
 // Note that the strobe state is also mutated to reflect the send_ENC and
 // send_MAC operations
-void disco_EncryptInPlace(strobe_s *strobe, u8 *plaintext, size_t plaintext_len,
-                          size_t plaintext_capacity) {
+void disco_EncryptInPlace(strobe_s *strobe, uint8_t *plaintext,
+                          size_t plaintext_len, size_t plaintext_capacity) {
   assert(plaintext_capacity == plaintext_len + 16);
   strobe_operate(strobe, TYPE_ENC, plaintext, plaintext_len, false);
   strobe_operate(strobe, TYPE_MAC, plaintext + plaintext_len, 16, false);
@@ -489,7 +490,7 @@ void disco_EncryptInPlace(strobe_s *strobe, u8 *plaintext, size_t plaintext_len,
 // with the obtained plaintext. the new length will be 16 bytes less
 // Note that the strobe state is also mutated to reflect the recv_ENC and
 // recv_MAC operations
-bool disco_DecryptInPlace(strobe_s *strobe, u8 *ciphertext,
+bool disco_DecryptInPlace(strobe_s *strobe, uint8_t *ciphertext,
                           size_t ciphertext_len) {
   // can't contain authentication tag
   if (ciphertext_len < 16) {

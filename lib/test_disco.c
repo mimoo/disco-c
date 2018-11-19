@@ -17,10 +17,10 @@ void test_N() {
                    NULL, NULL, NULL);
 
   // write the first handshake message → e, es
-  u8 out[500];
+  uint8_t out[500];
   strobe_s c_write;
   strobe_s c_read;
-  u8 text[] = "hey!";
+  uint8_t text[] = "hey!";
   int out_len = disco_WriteMessage(&hs_client, text, 5, out, &c_write, &c_read);
   if (out_len < 0) {
     printf("can't write handshake message\n");
@@ -34,7 +34,7 @@ void test_N() {
   printf("sent %d bytes\n", out_len);
 
   // process the first handshake message → e, es
-  u8 in[500];
+  uint8_t in[500];
   strobe_s s_read;
   strobe_s s_write;
   int in_len =
@@ -50,9 +50,9 @@ void test_N() {
   printf("received %d bytes:%s\n", in_len, in);
 
   // trying to send a post-handshake message
-  u8 pt_in_place[] =
+  uint8_t pt_in_place[] =
       "Us little brogammers we like to brogamme on our motorbikes yeah ";
-  u8 *ct_and_mac = (u8 *)malloc(sizeof(pt_in_place) + 16);
+  uint8_t *ct_and_mac = (uint8_t *)malloc(sizeof(pt_in_place) + 16);
   memcpy(ct_and_mac, pt_in_place, sizeof(pt_in_place));
 
   disco_EncryptInPlace(&c_write, ct_and_mac, sizeof(pt_in_place),
@@ -83,8 +83,8 @@ void test_NX() {
                    NULL, NULL, NULL);
 
   // write the first handshake message → e, es
-  u8 out[500];
-  u8 text[] = "hey!";
+  uint8_t out[500];
+  uint8_t text[] = "hey!";
   int out_len = disco_WriteMessage(&hs_client, text, 5, out, NULL, NULL);
   if (out_len < 0) {
     printf("can't write handshake message\n");
@@ -99,7 +99,7 @@ void test_NX() {
   printf("\n");
 
   // process the first handshake message → e, es
-  u8 in[500];
+  uint8_t in[500];
   int in_len = disco_ReadMessage(&hs_server, out, out_len, in, NULL, NULL);
   if (in_len < 0) {
     printf("can't read handshake message\n");
@@ -116,7 +116,7 @@ void test_NX() {
   printf("\n\npreparing second handshake message ->\n\n");
   strobe_s s_write;
   strobe_s s_read;
-  out_len = disco_WriteMessage(&hs_server, (u8 *)"hello hello", 12, out,
+  out_len = disco_WriteMessage(&hs_server, (uint8_t *)"hello hello", 12, out,
                                &s_read, &s_write);
   if (out_len < 0) {
     printf("can't write handshake message\n");
@@ -150,9 +150,9 @@ void test_NX() {
   assert(c_write.initialized && c_read.initialized);
 
   // trying to send a post-handshake message
-  u8 pt_in_place[] =
+  uint8_t pt_in_place[] =
       "Us little brogammers we like to brogamme on our motorbikes yeah ";
-  u8 *ct_and_mac = (u8 *)malloc(sizeof(pt_in_place) + 16);
+  uint8_t *ct_and_mac = (uint8_t *)malloc(sizeof(pt_in_place) + 16);
   memcpy(ct_and_mac, pt_in_place, sizeof(pt_in_place));
 
   disco_EncryptInPlace(&c_write, ct_and_mac, sizeof(pt_in_place),
@@ -196,8 +196,8 @@ void test_IK() {
                    NULL, NULL, NULL);
 
   // write the first handshake message → e, es, s, ss
-  u8 out[500];
-  u8 text[] = "hey!";
+  uint8_t out[500];
+  uint8_t text[] = "hey!";
   int out_len = disco_WriteMessage(&hs_client, text, 5, out, NULL, NULL);
   if (out_len < 0) {
     printf("can't write handshake message\n");
@@ -212,7 +212,7 @@ void test_IK() {
   printf("\n");
 
   // process the first handshake message
-  u8 in[500];
+  uint8_t in[500];
   int in_len = disco_ReadMessage(&hs_server, out, out_len, in, NULL, NULL);
   if (in_len < 0) {
     printf("can't read handshake message\n");
@@ -229,7 +229,7 @@ void test_IK() {
   printf("\n\npreparing second handshake message ->\n\n");
   strobe_s s_write;
   strobe_s s_read;
-  out_len = disco_WriteMessage(&hs_server, (u8 *)"hello hello", 12, out,
+  out_len = disco_WriteMessage(&hs_server, (uint8_t *)"hello hello", 12, out,
                                &s_read, &s_write);
   if (out_len < 0) {
     printf("can't write handshake message\n");
@@ -263,9 +263,9 @@ void test_IK() {
   assert(c_write.initialized && c_read.initialized);
 
   // trying to send a post-handshake message
-  u8 pt_in_place[] =
+  uint8_t pt_in_place[] =
       "Us little brogammers we like to brogamme on our motorbikes yeah ";
-  u8 *ct_and_mac = (u8 *)malloc(sizeof(pt_in_place) + 16);
+  uint8_t *ct_and_mac = (uint8_t *)malloc(sizeof(pt_in_place) + 16);
   memcpy(ct_and_mac, pt_in_place, sizeof(pt_in_place));
 
   disco_EncryptInPlace(&c_write, ct_and_mac, sizeof(pt_in_place),
@@ -280,8 +280,8 @@ void test_IK() {
   printf("final decrypt in place: %s\n", ct_and_mac);
 
   // other direction
-  u8 pt_in_place2[] = "this is hopefully the last test for today";
-  u8 *ct_and_mac2 = (u8 *)malloc(sizeof(pt_in_place2) + 16);
+  uint8_t pt_in_place2[] = "this is hopefully the last test for today";
+  uint8_t *ct_and_mac2 = (uint8_t *)malloc(sizeof(pt_in_place2) + 16);
   memcpy(ct_and_mac2, pt_in_place2, sizeof(pt_in_place2));
 
   disco_EncryptInPlace(&s_write, ct_and_mac2, sizeof(pt_in_place2),

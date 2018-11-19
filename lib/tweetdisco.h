@@ -8,13 +8,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-// clarity shortcuts
-typedef unsigned char u8;
-
 // asymmetric
 typedef struct keyPair {
-  u8 priv[32];
-  u8 pub[32];
+  uint8_t priv[32];
+  uint8_t pub[32];
   bool isSet;
 } keyPair;
 
@@ -162,18 +159,18 @@ typedef struct handshakeState {
 
 // handshake
 void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
-                      u8 *prologue, size_t prologue_len, keyPair *s, keyPair *e,
-                      keyPair *rs, keyPair *re);
-ssize_t disco_WriteMessage(handshakeState *hs, u8 *payload, size_t payload_len,
-                           u8 *message_buffer, strobe_s *client_s,
-                           strobe_s *server_s);
-ssize_t disco_ReadMessage(handshakeState *hs, u8 *message, size_t message_len,
-                          u8 *payload_buffer, strobe_s *client_s,
-                          strobe_s *server_s);
+                      uint8_t *prologue, size_t prologue_len, keyPair *s,
+                      keyPair *e, keyPair *rs, keyPair *re);
+ssize_t disco_WriteMessage(handshakeState *hs, uint8_t *payload,
+                           size_t payload_len, uint8_t *message_buffer,
+                           strobe_s *client_s, strobe_s *server_s);
+ssize_t disco_ReadMessage(handshakeState *hs, uint8_t *message,
+                          size_t message_len, uint8_t *payload_buffer,
+                          strobe_s *client_s, strobe_s *server_s);
 void disco_generateKeyPair(keyPair *kp);
 
 // post handshake
-void disco_EncryptInPlace(strobe_s *strobe, u8 *plaintext, size_t plaintext_len,
-                          size_t plaintext_capacity);
-bool disco_DecryptInPlace(strobe_s *strobe, u8 *ciphertext,
+void disco_EncryptInPlace(strobe_s *strobe, uint8_t *plaintext,
+                          size_t plaintext_len, size_t plaintext_capacity);
+bool disco_DecryptInPlace(strobe_s *strobe, uint8_t *ciphertext,
                           size_t ciphertext_len);
