@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 // asymmetric
-typedef struct keyPair {
+typedef struct keyPair_ {
   uint8_t priv[32];
   uint8_t pub[32];
   bool isSet;
@@ -32,7 +32,7 @@ typedef enum token {
   token_end_handshake = 8
 } token;
 
-typedef struct handshakePattern {
+typedef struct handshakePattern_ {
   char *name;
   token *pre_message_patterns;
   token *message_patterns;
@@ -139,12 +139,12 @@ typedef struct handshakePattern {
 // states
 //
 
-typedef struct symmetricState {
+typedef struct symmetricState_ {
   strobe_s strobe;
   bool isKeyed;
 } symmetricState;
 
-typedef struct handshakeState {
+typedef struct handshakeState_ {
   symmetricState symmetric_state;
 
   keyPair s;
