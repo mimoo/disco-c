@@ -1,11 +1,3 @@
-//
-// THIS IS BETA SOFTWARE
-//
-// TODO:
-// * do we need to check return value of strobe_operate() ?
-// 	- sounds like it either returns -1 or len (or important info for
-// recv_MAC)
-//
 #include "tweetdisco.h"
 #include "tweet25519.h"
 #include "tweetstrobe.h"
@@ -98,15 +90,15 @@ bool decryptAndHash(symmetricState *ss, uint8_t *ciphertext,
     strobe_operate(&(ss->strobe), TYPE_ENC | FLAG_I, ciphertext,
                    ciphertext_len - 16, false);
 
-    ssize_t res = strobe_operate(&(ss->strobe), TYPE_MAC | FLAG_I,
-                                 ciphertext + ciphertext_len - 16, 16, false);
-    if (res < 0) {
+    if (strobe_operate(&(ss->strobe), TYPE_MAC | FLAG_I,
+                       ciphertext + ciphertext_len - 16, 16, false) < 0) {
       return false;
     }
   }
   return true;
 }
 
+// this buffer is zero'ed by strobe when used for the RATCHET operation
 unsigned char ratchet_buffer[16];
 
 // split takes a symmetric state ss, a strobe state s1 and an empty
@@ -121,17 +113,12 @@ void split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
   // s2 = s1
   strobe_clone(s1, s2);
 
-  //
+  // differentiate by aborbing different domain strings
   strobe_operate(s1, TYPE_AD | FLAG_M, (uint8_t *)"initiator", 9, false);
   strobe_operate(s2, TYPE_AD | FLAG_M, (uint8_t *)"responder", 9, false);
 
-  for (int i = 0; i < 16; i++) {
-    ratchet_buffer[i] = 0;
-  }
+  // forward-secrecy
   strobe_operate(s1, TYPE_RATCHET, ratchet_buffer, 16, false);
-  for (int i = 0; i < 16; i++) {
-    ratchet_buffer[i] = 0;
-  }
   strobe_operate(s2, TYPE_RATCHET, ratchet_buffer, 16, false);
 }
 
@@ -139,7 +126,8 @@ void split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
 // handshakeState
 //
 
-// destroy hs except symmetric state
+// destroy removes any secret information contained in the handshakeState passed
+// as argument
 void destroy(handshakeState *hs) {
   int size_to_remove;
   // remove keys
@@ -163,6 +151,22 @@ void destroy(handshakeState *hs) {
 }
 
 // disco_Initialize needs the symmetric_state
+/**
+ * @brief to initialize a handshakeState
+ * disco_Initialize is used to initialize a non-NULL handshakeState with a
+ * protocol name, a Noise handshake pattern, a boolean indicating if the
+ * handshakeState represents a client or a server, an optional prologue, a set
+ * of optional key pairs (depending on the handshake pattern chosen).
+ * @hs           [description]
+ * @hp           [description]
+ * @initiator    [description]
+ * @prologue     [description]
+ * @prologue_len [description]
+ * @s            [description]
+ * @e            [description]
+ * @rs           [description]
+ * @re           [description]
+ */
 void disco_Initialize(handshakeState *hs, const handshakePattern hp,
                       bool initiator, uint8_t *prologue, size_t prologue_len,
                       keyPair *s, keyPair *e, keyPair *rs, keyPair *re) {
@@ -198,25 +202,25 @@ void disco_Initialize(handshakeState *hs, const handshakePattern hp,
     hs->s = *s;
     hs->s.isSet = true;
   } else {
-    hs->s.isSet = false;  // needed, I don't know why...
+    hs->s.isSet = false;
   }
   if (e != NULL) {
     hs->e = *e;
     hs->e.isSet = true;
   } else {
-    hs->e.isSet = false;  // needed
+    hs->e.isSet = false;
   }
   if (rs != NULL) {
     hs->rs = *rs;
     hs->rs.isSet = true;
   } else {
-    hs->rs.isSet = false;  // needed
+    hs->rs.isSet = false;
   }
   if (re != NULL) {
     hs->re = *re;
     hs->re.isSet = true;
   } else {
-    hs->re.isSet = false;  // needed
+    hs->re.isSet = false;
   }
   hs->initiator = initiator;
   hs->sending = initiator;
@@ -263,8 +267,28 @@ void disco_Initialize(handshakeState *hs, const handshakePattern hp,
 // * same buffer?
 // * reset buffer to 0 everytime right before writing to it?
 
-// disco_WriteMessage takes:
-// payload: an optional payload (can be NULL)
+/**
+ * disco_WriteMessage takes
+ * @param hs an initialized `handshakeState`.
+ * @param payload an optional (can be NULL) payload to send at the end of the
+ * handshake message. Depending on the handshake the security properties
+ * associated to that payload can be different (even non-existent).
+ * @param payload_len the length of the optional payload (can be 0).
+ * @param message_buffer the buffer that will contain the final handshake
+ * message to
+ * send to the other peer. It must be allocated with enough room for the
+ * relevant handshake message's content, the additional payload (of size
+ * `payload_len`) and each authentication tag (16 bytes).
+ * @param client_s the Strobe state that will be used by the client to encrypt
+ * data
+ * post-handshake. It can be set to `NULL` if this is not processing the end of
+ * the handshake.
+ * @param server_s the Strobe state that will be used by the server to encrypt
+ * data
+ * post-handshake. It can be set to `NULL` if this is not processing the end of
+ * the handshake.
+ * @return the length of the content written in `message_buffer`.
+ */
 ssize_t disco_WriteMessage(handshakeState *hs, uint8_t *payload,
                            size_t payload_len, uint8_t *message_buffer,
                            strobe_s *client_s, strobe_s *server_s) {
@@ -362,9 +386,23 @@ payload:
   return p - message_buffer;
 }
 
-// disco_ReadMessage reads and process the next message.
-// TODO: this is not the nicest API at the moment because the caller does not
-// know how much size it should allocate to the payload_buffer argument
+/**
+ * @brief used to read and process the next handshake message.
+ * disco_ReadMessage reads and process the next handshake message.
+ * @hs             the initialized `handshakeState`.
+ * @message        the received message buffer.
+ * @message_len    the length of the received message.
+ * @payload_buffer this buffer will be over-written with the received
+ * payload. Its capacity should contain enough room for it. You can calculate
+ * this required size by substracting other content from the message's length.
+ * @client_s       the Strobe state that will be used by the client to
+ * encrypt data post-handshake. It can be set to `NULL` if this is not
+ * processing the end of the handshake.
+ * @server_s       the Strobe state that will be used by the server to
+ * encrypt data post-handshake. It can be set to `NULL` if this is not
+ * processing the end of the handshake.
+ * @return                the length of the content written in `payload_buffer`.
+ */
 ssize_t disco_ReadMessage(handshakeState *hs, uint8_t *message,
                           size_t message_len, uint8_t *payload_buffer,
                           strobe_s *client_s, strobe_s *server_s) {

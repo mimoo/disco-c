@@ -100,7 +100,12 @@ typedef struct strobe_s_ {
   uint8_t pos_begin;
   uint8_t flags;
   uint8_t initiator;
-  bool initialized;
+  uint8_t initialized;  // strobe is initialized if this value is set to 111.
+                        // This is because we cannot assume that a boolean would
+                        // be set to false initially (C stuff). A uint8_t is a
+                        // short value but here we do not care about security
+                        // much, rather catching bugs early in a development
+                        // environement.
 } strobe_s;
 
 /* Initialize a Strobe object with a protocol name */
@@ -129,6 +134,7 @@ ssize_t strobe_operate(strobe_s *strobe, uint8_t control_flags, uint8_t *buffer,
 #define TYPE_RATCHET FLAG_C /**< Erase data to prevent rollback */
 #define TYPE_PRF (FLAG_I | FLAG_A | FLAG_C) /**< Return pseudorandom hash */
 
+bool strobe_isInitialized(strobe_s *strobe);
 void strobe_destroy(strobe_s *strobe);
 void strobe_clone(const strobe_s *src, strobe_s *dst);
 void strobe_print(const strobe_s *strobe);

@@ -177,7 +177,15 @@ void strobe_init(strobe_s *strobe, const uint8_t *protocol_name,
   strobe_operate(strobe, FLAG_A | FLAG_M, (uint8_t *)protocol_name,
                  protocol_name_len, false);
 
-  strobe->initialized = true;
+  strobe->initialized = 111;
+}
+
+bool strobe_isInitialized(strobe_s *strobe) {
+  if (strobe->initialized == 111) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 /** Destroy a STROBE object by writing zeros over it. */
@@ -191,7 +199,7 @@ inline void strobe_destroy(strobe_s *strobe) {
   strobe->pos_begin = 0;
   strobe->flags = 0;
   strobe->initiator = 0;
-  strobe->initialized = false;
+  strobe->initialized = 0;
 }
 
 /** clone a STROBE object */

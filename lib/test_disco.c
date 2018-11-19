@@ -27,7 +27,7 @@ void test_N() {
   }
 
   // handshake should be done for the client
-  assert(c_write.initialized && c_read.initialized);
+  assert(strobe_isInitialized(&c_write) && strobe_isInitialized(&c_read));
 
   // debug
   printf("sent %d bytes\n", out_len);
@@ -43,7 +43,7 @@ void test_N() {
     abort();
   }
 
-  assert(s_write.initialized && s_read.initialized);
+  assert(strobe_isInitialized(&s_write) && strobe_isInitialized(&s_read));
 
   // debug
   printf("received %d bytes:%s\n", in_len, in);

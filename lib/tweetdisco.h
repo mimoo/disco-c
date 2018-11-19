@@ -1,5 +1,8 @@
 /**
- * @brief The main Disco Library. This file needs to be included.
+ * \mainpage The EmbeddedDisco Library
+ * \section Introduction
+ * Hello hello
+ *
  */
 #ifndef __DISCO_H__
 #define __DISCO_H__
