@@ -162,6 +162,9 @@ typedef struct handshakeState_ {
   bool handshake_done;
 } handshakeState;
 
+// utility
+void disco_generateKeyPair(keyPair *kp);
+
 // handshake
 void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
                       uint8_t *prologue, size_t prologue_len, keyPair *s,
@@ -172,7 +175,6 @@ ssize_t disco_WriteMessage(handshakeState *hs, uint8_t *payload,
 ssize_t disco_ReadMessage(handshakeState *hs, uint8_t *message,
                           size_t message_len, uint8_t *payload_buffer,
                           strobe_s *client_s, strobe_s *server_s);
-void disco_generateKeyPair(keyPair *kp);
 
 // post-handshake
 void disco_EncryptInPlace(strobe_s *strobe, uint8_t *plaintext,

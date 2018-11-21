@@ -6,7 +6,7 @@ This repository is light on detail as it is actively under developement. To have
 
 In order to make this library more stable I need your help. Play with the library, [contact me here](https://www.cryptologie.net/contact), provide feedback, post issues :) I'm happy to help.
 
-## Example
+## Quick Example
 
 Here's how you setup a **server** with the `IK` handshake (the server's identity is known to the client; the client advertises it's identity during the handshake):
 
@@ -114,6 +114,87 @@ int main() {
   // send the `ciphertext` of size `size(plaintext)+16`
 }
 ```
+
+## How to use?
+
+Note that Disco is configured with `Keccak-f[1600]` and `128-bit` of security. This settings can be changed for `keccak-f[800]`/`keccak-f[400]` or `256-bit` of security. This is all done in `tweetstrobe.h` by defining `STROBE_INTEROP_SECURITY_BITS` and `KECCAK_INTEROP_F_BITS`.
+
+## Establishing a secure session between two peers
+
+To use the **asymmetric handshakes** of Disco, include disco in your project:
+
+```c
+#include "tweetdisco.h"
+```
+
+The available functions are available in the same header. They consists of:
+
+```c
+// used to generate long-term key pairs
+void disco_generateKeyPair(keyPair *kp);
+
+// used to initialized your handshakeState with a handshake pattern
+void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
+                      uint8_t *prologue, size_t prologue_len, keyPair *s,
+                      keyPair *e, keyPair *rs, keyPair *re);
+
+// used to generate a handshake message
+ssize_t disco_WriteMessage(handshakeState *hs, uint8_t *payload,
+                           size_t payload_len, uint8_t *message_buffer,
+                           strobe_s *client_s, strobe_s *server_s);
+
+// used to parse a handshake message
+ssize_t disco_ReadMessage(handshakeState *hs, uint8_t *message,
+                          size_t message_len, uint8_t *payload_buffer,
+                          strobe_s *client_s, strobe_s *server_s);
+
+// post-handshake encryption
+void disco_EncryptInPlace(strobe_s *strobe, uint8_t *plaintext,
+                          size_t plaintext_len, size_t plaintext_capacity);
+
+// post-handshake decryption
+bool disco_DecryptInPlace(strobe_s *strobe, uint8_t *ciphertext,
+                          size_t ciphertext_len);
+```
+
+the different handshake patterns are defined in `tweetdisco.h` as:
+
+* `HANDSHAKE_N`: the server only receives messages (one-way), the client is not authenticated, the client knows the server public key.
+* `HANDSHAKE_K`: the server only receives messages (one-way), the server knows the client public key, the client knows the server public key.
+* `HANDSHAKE_X`: the server only receives messages (one-way), the client transmits its public key during the handshake, the client knows the server public key.
+* `HANDSHAKE_NK`: the client is not authenticated, the client knows the server public key.
+* `HANDSHAKE_KK`: the server knows the client public key, the client knows the server public key.
+* `HANDSHAKE_NX`: the client is not authenticated, the server transmits its public key during the handshake.
+* `HANDSHAKE_KX`: the server knows the client public key, the server transmits its public key during the handshake.
+* `HANDSHAKE_XK`: the client transmits its public key during the handshake, the client knows the server public key.
+* `HANDSHAKE_IK`: the client transmits its public key during the handshake, the client knows the server public key.
+* `HANDSHAKE_XX`: the client transmits its public key during the handshake, the server transmits its public key during the handshake.
+* `HANDSHAKE_IX`: the client transmits its public key during the handshake, the server transmits its public key during the handshake.
+
+Refer to the [Noise specification](http://noiseprotocol.org/noise.html) to know:
+
+* how many messages to write or read for a specific handshake pattern
+* what the security properties of the handshake pattern are
+
+At the end of the handshake, two strobe state are returned by `disco_WriteMessage` and `disco_ReadMessage`. One is for the client to encrypt to the server and the other is for the server to encrypt to the client.
+
+## Hashing, Encrypting, Authenticating, Deriving Keys, etc.
+
+To use the **symmetric parts** of Disco, include the following file in your projects:
+
+```c
+#include "symmetric.h"
+```
+
+The following functions are available:
+
+```c
+// nothing yet
+```
+
+## Need help?
+
+This library is still heavily experimental. Its goal is to support as many platforms as possible. If you need help making it work for a specific platform please post an issue. If you have feedback, or suggestions, please post an issue as well.
 
 ## More
 
