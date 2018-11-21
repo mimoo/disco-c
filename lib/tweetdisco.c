@@ -18,7 +18,8 @@
  */
 void disco_generateKeyPair(keyPair *kp) {
   crypto_box_keypair(kp->pub, kp->priv);
-  kp->isSet = true;
+  kp->isSet = true;  // TODO: is this useful? If it is, should we use a magic
+                     // number here in case it's not initialized to false?
 }
 
 void DH(keyPair mine, keyPair theirs, uint8_t *output) {
@@ -106,9 +107,9 @@ void split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
   strobe_operate(s2, TYPE_AD | FLAG_M, (uint8_t *)"responder", 9, false);
 
   // forward-secrecy
-  unsigned char ratchet_buffer[16];
-  strobe_operate(s1, TYPE_RATCHET, ratchet_buffer, 16, false);
-  strobe_operate(s2, TYPE_RATCHET, ratchet_buffer, 16, false);
+  unsigned char ratchet_buffer[32];
+  strobe_operate(s1, TYPE_RATCHET, ratchet_buffer, 32, false);
+  strobe_operate(s2, TYPE_RATCHET, ratchet_buffer, 32, false);
 }
 
 //
@@ -181,12 +182,11 @@ void disco_Initialize(handshakeState *hs, const handshakePattern hp,
   hs->symmetric_state.isKeyed = false;
 
   // prologue
-  if (prologue != NULL && prologue_len != 0) {
-    mixHash(&(hs->symmetric_state), prologue, prologue_len);
-  }
+  mixHash(&(hs->symmetric_state), prologue, prologue_len);
 
   // set variables
   if (s != NULL) {
+    // TODO: should we do assert(hs->s.isSet) ?
     hs->s = *s;
     hs->s.isSet = true;
   } else {
@@ -289,6 +289,8 @@ ssize_t disco_WriteMessage(handshakeState *hs, uint8_t *payload,
   while (true) {
     switch (*current_token) {
       case token_e:
+        printf("state before e:\n");
+        strobe_print(&(hs->symmetric_state.strobe));
         assert(!hs->e.isSet);
         disco_generateKeyPair(&(hs->e));
         memcpy(p, hs->e.pub, 32);
@@ -312,6 +314,8 @@ ssize_t disco_WriteMessage(handshakeState *hs, uint8_t *payload,
         //
         break;
       case token_es:
+        printf("state before es:\n");
+        strobe_print(&(hs->symmetric_state.strobe));
         if (hs->initiator) {
           DH(hs->e, hs->rs, DH_result);
         } else {
@@ -345,10 +349,14 @@ ssize_t disco_WriteMessage(handshakeState *hs, uint8_t *payload,
   }
 payload:
   // Payload
-  assert(!(payload == NULL && payload_len != 0));
   if (payload != NULL) {
     memcpy(p, payload, payload_len);
   }
+
+  // debug
+  printf("state before decryption:\n");
+  strobe_print(&(hs->symmetric_state.strobe));
+  // -debug
 
   encryptAndHash(&(hs->symmetric_state), p, payload_len);
 
@@ -471,21 +479,17 @@ ssize_t disco_ReadMessage(handshakeState *hs, uint8_t *message,
     current_token++;
   }
 payload:
-  // Payload
+  // Decrypt payload
   if (hs->symmetric_state.isKeyed && message_len < 16) {  // a tag must be here
     return -1;
   }
   bool res = decryptAndHash(&(hs->symmetric_state), message, message_len);
   if (!res) {
-    return -1;
+    return -1;  // TODO: should we return different errors?
   }
-
-  // the real length of the message (minus tag)
   if (hs->symmetric_state.isKeyed) {
-    message_len -= 16;
+    message_len -= 16;  // remove the authentication tag if there is one
   }
-  // TODO: payload_buffer might not have enough room
-  // only copy what's left in payload buffer!!!
   memcpy(payload_buffer, message, message_len);
 
   // Split?
@@ -506,7 +510,7 @@ payload:
 // send_MAC operations
 void disco_EncryptInPlace(strobe_s *strobe, uint8_t *plaintext,
                           size_t plaintext_len, size_t plaintext_capacity) {
-  assert(plaintext_capacity == plaintext_len + 16);
+  assert(plaintext_capacity >= plaintext_len + 16);
   strobe_operate(strobe, TYPE_ENC, plaintext, plaintext_len, false);
   strobe_operate(strobe, TYPE_MAC, plaintext + plaintext_len, 16, false);
 }

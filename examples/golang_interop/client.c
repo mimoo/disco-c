@@ -21,6 +21,9 @@ uint8_t hexchar2bin(const char *hex) {
       printf("not a valid hex string");
       abort();
     }
+    if (i == 0) {
+      res = res << 4;
+    }
   }
   return res;
 }
@@ -28,9 +31,8 @@ uint8_t hexchar2bin(const char *hex) {
 int hex2bin(const char *hex, uint8_t *out) {
   if (out == NULL) return 0;
   const char *p = hex;
-  unsigned char *q = out;
+  uint8_t *q = out;
   while (*p != 0) {
-    //    printf("p: %02x - %c\n", *p, *p);
     *q = hexchar2bin(p);
     q += 1;
     p += 2;  // advance 2 chars
@@ -62,15 +64,23 @@ int main(int argc, char const *argv[]) {
   assert(strlen(argv[3]) == 64);
   keyPair server_keypair;
   hex2bin(argv[3], server_keypair.pub);
+  printf("server public key:\n");
+  for (int i = 0; i < 32; i++) {
+    printf("%02x", server_keypair.pub[i]);
+  }
+  printf("\n");
 
   // initialize client
   handshakeState hs_client;
   disco_Initialize(&hs_client, HANDSHAKE_NK, true, NULL, 0, NULL, NULL,
                    &server_keypair, NULL);
 
+  printf("state after init:\n");
+  strobe_print(&(hs_client.symmetric_state.strobe));
   // generate the first handshake message → e, es
   uint8_t out[500];
-  int out_len = disco_WriteMessage(&hs_client, NULL, 0, out + 2, NULL, NULL);
+  ssize_t out_len =
+      disco_WriteMessage(&hs_client, NULL, 0, out + 2, NULL, NULL);
   if (out_len < 0) {
     printf("can't generate first handshake message\n");
     return -1;
@@ -103,13 +113,16 @@ int main(int argc, char const *argv[]) {
   // receive second handshake message
   uint8_t in[500];
   ssize_t in_len = read(sock, in, 1024);
-  if (in_len < 0) {
+  if (in_len <= 0) {
     printf("\nReceive second handshake message failed\n");
     return -1;
   }
 
+  printf("received %zd bytes\n", in_len);
+
   // remove framing
   size_t length = (in[0] << 8) | in[1];
+  printf("without framing: %d bytes\n", length);
   if (length != in_len - 2) {
     printf("\nmessage was possibly fragmented, we don't handle that\n");
     return -1;
@@ -125,15 +138,47 @@ int main(int argc, char const *argv[]) {
     return -1;
   }
   ssize_t payload_len =
-      disco_ReadMessage(&hs_client, in, in_len, payload, &c_write, &c_read);
+      disco_ReadMessage(&hs_client, in + 2, in_len, payload, &c_write, &c_read);
   if (payload_len < 0) {
     printf("can't read handshake message\n");
     abort();
   }
-
   // print out payload/payload_len
-
   assert(strobe_isInitialized(&c_read) && strobe_isInitialized(&c_write));
+
+  // handshake done!
+  printf("handshake done!\n");
+
+  while (true) {
+    // get line
+    unsigned char *buffer = NULL;
+    size_t size;
+    getline(&buffer, &size, stdin);
+    // encrypt
+    out_len = sizeof(buffer) + 16;  // plaintext + tag
+    uint8_t *ct_and_mac = (uint8_t *)malloc(out_len + 2);
+    memcpy(ct_and_mac + 2, buffer, sizeof(buffer));
+    disco_EncryptInPlace(&c_write, ct_and_mac + 2, sizeof(buffer), out_len + 2);
+    // length framing
+    ct_and_mac[0] = (out_len >> 8) & 0xFF;
+    ct_and_mac[1] = out_len & 0xFF;
+    //
+
+    printf("encrypted payload:\n");
+    for (int i = 0; i < out_len + 2; i++) {
+      printf("%02x", ct_and_mac[i]);
+    }
+    printf("\n");
+    // send
+    sent = send(sock, ct_and_mac, out_len + 2, 0);
+    if (sent < 0) {
+      printf("\nSending first handshake message failed\n");
+      return -1;
+    }
+    printf("message of %zd bytes sent\n", sent);
+    // free
+    free(buffer);
+  }
 
   //
   return 0;
