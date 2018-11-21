@@ -1,46 +1,45 @@
-#include "tweetdisco.h"
-#include <stdio.h>
-
-#include <sys/socket.h>
-#include <stdlib.h>
-#include <netinet/in.h>
-#include <string.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
-uint8_t hexchar2bin(const char *hex) {
-  uint8_t res = 0;
-  for (int i = 0; i < 2; i++) {
-    if (hex[i] >= '0' && hex[i] <= '9') {
-      res ^= hex[i] - '0';
-    } else if (hex[i] >= 'A' && hex[i] <= 'F') {
-      res ^= hex[i] - 'A' + 10;
-    } else if (hex[i] >= 'a' && hex[i] <= 'f') {
-      res ^= hex[i] - 'a' + 10;
-    } else {
-      printf("not a valid hex string");
-      abort();
-    }
-    if (i == 0) {
-      res = res << 4;
-    }
-  }
-  return res;
-}
+#include "tweetdisco.h"
 
+// helper function to decode hexadecimal string into a buffer. Not the nicest
+// thing but it works.
 int hex2bin(const char *hex, uint8_t *out) {
   if (out == NULL) return 0;
   const char *p = hex;
   uint8_t *q = out;
   while (*p != 0) {
-    *q = hexchar2bin(p);
+    *q = 0;
+    for (int i = 0; i < 2; i++) {
+      if (p[i] >= '0' && p[i] <= '9') {
+        *q ^= p[i] - '0';
+      } else if (p[i] >= 'A' && p[i] <= 'F') {
+        *q ^= p[i] - 'A' + 10;
+      } else if (p[i] >= 'a' && p[i] <= 'f') {
+        *q ^= p[i] - 'a' + 10;
+      } else {
+        return -1;
+      }
+      if (i == 0) {
+        *q = *q << 4;
+      }
+    }
     q += 1;
-    p += 2;  // advance 2 chars
+    p += 2;
   }
-
   return 1;
 }
 
+/*
+ * We will use the NK handshake pattern to test interoperability with the Go
+ * implementation of Disco
+ */
 int main(int argc, char const *argv[]) {
   // get server address, port and key from arguments
   if (argc != 4) {
@@ -57,33 +56,29 @@ int main(int argc, char const *argv[]) {
   // server address
   if (inet_pton(AF_INET, argv[1], &serv_addr.sin_addr) <= 0) {
     printf("\nInvalid address/ Address not supported \n");
-    return -1;
+    return 1;
   }
 
   // server keypair
   assert(strlen(argv[3]) == 64);
   keyPair server_keypair;
-  hex2bin(argv[3], server_keypair.pub);
-  printf("server public key:\n");
-  for (int i = 0; i < 32; i++) {
-    printf("%02x", server_keypair.pub[i]);
+  if (hex2bin(argv[3], server_keypair.pub) < 0) {
+    printf("invalid server pubkey\n");
+    return 1;
   }
-  printf("\n");
 
   // initialize client
   handshakeState hs_client;
   disco_Initialize(&hs_client, HANDSHAKE_NK, true, NULL, 0, NULL, NULL,
                    &server_keypair, NULL);
 
-  printf("state after init:\n");
-  strobe_print(&(hs_client.symmetric_state.strobe));
   // generate the first handshake message → e, es
   uint8_t out[500];
   ssize_t out_len =
       disco_WriteMessage(&hs_client, NULL, 0, out + 2, NULL, NULL);
   if (out_len < 0) {
     printf("can't generate first handshake message\n");
-    return -1;
+    return 1;
   }
 
   // add framing (2 bytes of length)
@@ -95,18 +90,18 @@ int main(int argc, char const *argv[]) {
   int sock = 0;
   if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     printf("\n Socket creation error \n");
-    return -1;
+    return 1;
   }
   if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
     printf("\nConnection Failed \n");
-    return -1;
+    return 1;
   }
 
   // send first handshake message
   ssize_t sent = send(sock, out, out_len, 0);
   if (sent < 0) {
     printf("\nSending first handshake message failed\n");
-    return -1;
+    return 1;
   }
   printf("Hello message of %zd bytes sent\n", sent);
 
@@ -115,17 +110,17 @@ int main(int argc, char const *argv[]) {
   ssize_t in_len = read(sock, in, 1024);
   if (in_len <= 0) {
     printf("\nReceive second handshake message failed\n");
-    return -1;
+    return 1;
   }
 
   printf("received %zd bytes\n", in_len);
 
   // remove framing
   size_t length = (in[0] << 8) | in[1];
-  printf("without framing: %d bytes\n", length);
+  printf("without framing: %zu bytes\n", length);
   if (length != in_len - 2) {
     printf("\nmessage was possibly fragmented, we don't handle that\n");
-    return -1;
+    return 1;
   }
   in_len = length;
 
@@ -135,7 +130,7 @@ int main(int argc, char const *argv[]) {
   uint8_t payload[500];
   if (in_len > 500) {
     printf("\nwe don't suppor this yet\n");
-    return -1;
+    return 1;
   }
   ssize_t payload_len =
       disco_ReadMessage(&hs_client, in + 2, in_len, payload, &c_write, &c_read);
@@ -149,6 +144,7 @@ int main(int argc, char const *argv[]) {
   // handshake done!
   printf("handshake done!\n");
 
+  // loop: receive a line from the terminal and send it to the server
   while (true) {
     // get line
     unsigned char *buffer = NULL;
@@ -159,23 +155,19 @@ int main(int argc, char const *argv[]) {
     uint8_t *ct_and_mac = (uint8_t *)malloc(out_len + 2);
     memcpy(ct_and_mac + 2, buffer, sizeof(buffer));
     disco_EncryptInPlace(&c_write, ct_and_mac + 2, sizeof(buffer), out_len + 2);
+
     // length framing
     ct_and_mac[0] = (out_len >> 8) & 0xFF;
     ct_and_mac[1] = out_len & 0xFF;
-    //
 
-    printf("encrypted payload:\n");
-    for (int i = 0; i < out_len + 2; i++) {
-      printf("%02x", ct_and_mac[i]);
-    }
-    printf("\n");
     // send
     sent = send(sock, ct_and_mac, out_len + 2, 0);
     if (sent < 0) {
       printf("\nSending first handshake message failed\n");
-      return -1;
+      return 1;
     }
     printf("message of %zd bytes sent\n", sent);
+
     // free
     free(buffer);
   }

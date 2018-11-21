@@ -289,8 +289,6 @@ ssize_t disco_WriteMessage(handshakeState *hs, uint8_t *payload,
   while (true) {
     switch (*current_token) {
       case token_e:
-        printf("state before e:\n");
-        strobe_print(&(hs->symmetric_state.strobe));
         assert(!hs->e.isSet);
         disco_generateKeyPair(&(hs->e));
         memcpy(p, hs->e.pub, 32);
@@ -314,8 +312,6 @@ ssize_t disco_WriteMessage(handshakeState *hs, uint8_t *payload,
         //
         break;
       case token_es:
-        printf("state before es:\n");
-        strobe_print(&(hs->symmetric_state.strobe));
         if (hs->initiator) {
           DH(hs->e, hs->rs, DH_result);
         } else {
@@ -352,11 +348,6 @@ payload:
   if (payload != NULL) {
     memcpy(p, payload, payload_len);
   }
-
-  // debug
-  printf("state before decryption:\n");
-  strobe_print(&(hs->symmetric_state.strobe));
-  // -debug
 
   encryptAndHash(&(hs->symmetric_state), p, payload_len);
 
