@@ -146,15 +146,21 @@ void destroy(handshakeState *hs) {
  * protocol name, a Noise handshake pattern, a boolean indicating if the
  * handshakeState represents a client or a server, an optional prologue, a set
  * of optional key pairs (depending on the handshake pattern chosen).
- * @hs           [description]
- * @hp           [description]
- * @initiator    [description]
- * @prologue     [description]
- * @prologue_len [description]
- * @s            [description]
- * @e            [description]
- * @rs           [description]
- * @re           [description]
+ * @hs           a non-NULL handshakeState to be initialized.
+ * @hp           the chosen handshake pattern. see tweetdisco.h for the
+ * handshake patterns define (HANDSHAKE_NX, HANDSHAKE_NK, etc.)
+ * @initiator    true if the peer is the client (sending the first message).
+ * False if the peer is the server.
+ * @prologue     any data that was exchanged between the two peers prior to the
+ * handshake. See Noise's specification for more information on this field.
+ * @prologue_len The length of the `prologue` buffer.
+ * @s            NULL or a keypair containing the peer's long-term static key.
+ * @e            NULL or a keypair containing the peer's ephemeral key (see
+ * fallback patterns in the Noise specification).
+ * @rs           NULL or a keypair containing the remote peer's long-term static
+ * key.
+ * @re           NULL or a keypair containing the remote peer's ephemeral key
+ * (see fallback patterns in the Noise specification).
  */
 void disco_Initialize(handshakeState *hs, const handshakePattern hp,
                       bool initiator, uint8_t *prologue, size_t prologue_len,
