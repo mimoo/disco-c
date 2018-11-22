@@ -136,7 +136,7 @@ ssize_t strobe_operate(strobe_s *strobe, uint8_t control_flags, uint8_t *buffer,
 
 bool strobe_isInitialized(strobe_s *strobe);
 void strobe_destroy(strobe_s *strobe);
-void strobe_clone(const strobe_s *src, strobe_s *dst);
+// void strobe_clone(const strobe_s *src, strobe_s *dst);
 void strobe_print(const strobe_s *strobe);
 
 #endif /* __STROBE_H__ */

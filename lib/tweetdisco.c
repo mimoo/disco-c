@@ -97,10 +97,9 @@ void split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
   assert(s1 != NULL && s2 != NULL);
 
   // s1 = our current strobe state
-  strobe_clone(&(ss->strobe), s1);
-
+  *s1 = ss->strobe;
   // s2 = s1
-  strobe_clone(s1, s2);
+  *s2 = ss->strobe;
 
   // differentiate by aborbing different domain strings
   strobe_operate(s1, TYPE_AD | FLAG_M, (uint8_t *)"initiator", 9, false);
@@ -508,6 +507,7 @@ payload:
 void disco_EncryptInPlace(strobe_s *strobe, uint8_t *plaintext,
                           size_t plaintext_len, size_t plaintext_capacity) {
   assert(plaintext_capacity >= plaintext_len + 16);
+  assert(plaintext != NULL);
   strobe_operate(strobe, TYPE_ENC, plaintext, plaintext_len, false);
   strobe_operate(strobe, TYPE_MAC, plaintext + plaintext_len, 16, false);
 }
@@ -518,6 +518,7 @@ void disco_EncryptInPlace(strobe_s *strobe, uint8_t *plaintext,
 // recv_MAC operations
 bool disco_DecryptInPlace(strobe_s *strobe, uint8_t *ciphertext,
                           size_t ciphertext_len) {
+  assert(ciphertext != NULL);
   // can't contain authentication tag
   if (ciphertext_len < 16) {
     return false;

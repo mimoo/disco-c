@@ -203,6 +203,7 @@ inline void strobe_destroy(strobe_s *strobe) {
 }
 
 /** clone a STROBE object */
+/* I think this is unecessary, we can just do dst = src; we don't have pointers
 inline void strobe_clone(const strobe_s *src, strobe_s *dst) {
   assert(src != NULL && dst != NULL);
   memcpy(dst->state.b, src->state.b, 25 * sizeof(kword_t) / sizeof(uint8_t));
@@ -212,6 +213,7 @@ inline void strobe_clone(const strobe_s *src, strobe_s *dst) {
   dst->initiator = src->initiator;
   dst->initialized = src->initialized;
 }
+*/
 
 void strobe_print(const strobe_s *strobe) {
   for (int i = 0; i < sizeof(strobe->state); i++) {

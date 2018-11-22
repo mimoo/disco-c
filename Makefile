@@ -13,10 +13,14 @@ tweetdisco.a: tweetdisco.o tweetstrobe.o tweet25519.o randombytes.o
 
 # :)
 tweetdisco.o: lib/tweetdisco.c lib/tweetdisco.h
-	$(CC) $(CFLAGS) lib/tweetdisco.c -I strobe -c -o tweetdisco.o
+	$(CC) $(CFLAGS) lib/tweetdisco.c -c -o tweetdisco.o
+
+# the symmetric functions wrappers for strobe
+symmetric.o: lib/symmetric.c lib/symmetric.h lib/tweetstrobe.h
+	$(CC) $(CFLAGS) lib/symmetric.c -c -o symmetric.o
 
 # we use this for X25519 (no ed25519)
-tweet25519.o: 
+tweet25519.o: lib/tweet25519.c lib/tweet25519.h
 	$(CC) $(CFLAGS) lib/tweet25519.c -c -o tweet25519.o
 
 # we need this for tweetnacl
@@ -28,9 +32,9 @@ tweetstrobe.o: lib/tweetstrobe.c lib/tweetstrobe.h lib/keccak_f.c.inc
 	$(CC) $(CFLAGS) lib/tweetstrobe.c -c -o tweetstrobe.o
 
 # test is probably how you should compile your own program
-test: lib/test_disco.c tweetdisco.o tweetstrobe.o tweet25519.o randombytes.o
+test: lib/test_disco.c tweetdisco.o tweetstrobe.o tweet25519.o randombytes.o symmetric.o
 	$(CC) $(CFLAGS) -g lib/test_disco.c -c -o test_disco.o
-	$(CC) $(CFLAGS) -g test_disco.o tweetdisco.o tweetstrobe.o tweet25519.o randombytes.o -o test
+	$(CC) $(CFLAGS) -g test_disco.o tweetdisco.o symmetric.o tweetstrobe.o tweet25519.o randombytes.o -o test
 	./test
 
 # test our implementation of tweetstrobe

@@ -1,4 +1,5 @@
 #include "tweetdisco.h"
+#include "symmetric.h"
 #include <stdio.h>
 
 void test_N() {
@@ -295,9 +296,78 @@ void test_IK() {
   printf("final decrypt in place: %s\n", ct_and_mac2);
 }
 
+void test_HashInteropGolang() {
+  uint8_t input[] = "hi, how are you?";
+  uint8_t out[32];
+  disco_Hash(input, 16, out, 32);
+  uint8_t res[] =
+      "\xed\xa8\x50\x6c\x1f\xb0\xbb\xcc\x3f\x62\x62\x6f\xef\x07\x4b\xbf\x2d\x09"
+      "\xa8\xc7\xc6\x08\xf3\xfa\x14\x82\xc9\xa6\x25\xd0\x0f\x75";
+  for (int i = 0; i < 32; i++) {
+    assert(out[i] == res[i]);
+  }
+  printf("\n");
+}
+
+void test_Hash() {
+  // hashing with simple disco_Hash function
+  uint8_t input[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  uint8_t out[32];
+  disco_Hash(input, 10, out, 32);
+  /*
+  printf("result:\n");
+  for (int i = 0; i < 32; i++) {
+    printf("%02x", out[i]);
+  }
+  printf("\n");
+  */
+
+  // hashing with New-Write-Sum
+  discoHashCtx ctx;
+  disco_HashNew(&ctx);
+  disco_HashWrite(&ctx, input, 10);
+  uint8_t out2[32];
+  // compare
+  disco_HashSum(&ctx, out2, 32);
+  for (int i = 0; i < 32; i++) {
+    assert(out[i] == out2[i]);
+  }
+
+  // hash again and compare
+  disco_HashSum(&ctx, out2, 32);
+  for (int i = 0; i < 32; i++) {
+    assert(out[i] == out2[i]);
+  }
+
+  // this time hash in two times
+  disco_HashResetCtx(&ctx);
+  disco_HashNew(&ctx);
+  disco_HashWrite(&ctx, input, 5);
+  disco_HashWrite(&ctx, input + 5, 5);
+  disco_HashSum(&ctx, out2, 32);
+  for (int i = 0; i < 32; i++) {
+    assert(out[i] == out2[i]);
+  }
+
+  // hash with Tuple
+  disco_HashResetCtx(&ctx);
+  disco_HashNew(&ctx);
+  disco_HashWriteTuple(&ctx, input, 5);
+  disco_HashWriteTuple(&ctx, input + 5, 5);
+  disco_HashSum(&ctx, out2, 32);
+  bool different = false;
+  for (int i = 0; i < 32; i++) {
+    if (out[i] != out2[i]) {
+      different = true;
+      break;
+    }
+  }
+  assert(different);
+}
+
 int main() {
   // doing a loop coz I have a bug SOMETIMES
-  for (int j = 0; j < 100; j++) {
+  for (int j = 0; j < 10; j++) {
     printf("iteration #%d\n", j);
     printf("\n\ntesting N\n\n");
     test_N();
@@ -307,4 +377,6 @@ int main() {
     test_IK();
   }
 
+  test_Hash();
+  test_HashInteropGolang();
 }
