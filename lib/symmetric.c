@@ -132,3 +132,32 @@ bool disco_VerifyIntegrity(uint8_t* key, size_t key_len, uint8_t* data,
   }
   return true;
 }
+
+//
+// Pseudo-Random Number Generator
+//
+
+// This is a sensible PRNG: if your process forks, the two threads will produce
+// the same random numbers. If you're inside a VM that gets cloned, the VMs will
+// then produce the same random numbers.
+void disco_RandomSeed(discoRandomCtx* ctx, uint8_t* seed, size_t seed_len) {
+  assert(ctx != NULL);
+  assert(seed != NULL && seed_len > 16);
+  strobe_init(&(ctx->strobe), (uint8_t*)"DiscoPRNG", 9);
+  strobe_operate(&(ctx->strobe), TYPE_AD, seed, seed_len, false);
+  ctx->initialized = INITIALIZED;
+}
+
+// You can re-inject entropy into your PRNG.
+void disco_InjectEntropy(discoRandomCtx* ctx, uint8_t* entropy,
+                         size_t entropy_len) {
+  assert(ctx != NULL && ctx->initialized == INITIALIZED);
+  strobe_operate(&(ctx->strobe), TYPE_KEY, entropy, entropy_len, false);
+}
+
+// to obtain a random number of size `out_len`.
+void disco_RandomGet(discoRandomCtx* ctx, uint8_t* out, size_t out_len) {
+  assert(ctx != NULL && ctx->initialized == INITIALIZED);
+  assert(out != NULL && out_len > 0);
+  strobe_operate(&(ctx->strobe), TYPE_PRF, out, out_len, false);
+}
