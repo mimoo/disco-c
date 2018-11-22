@@ -189,7 +189,29 @@ To use the **symmetric parts** of Disco, include the following file in your proj
 The following functions are available:
 
 ```c
-// nothing yet
+// Hashing
+void disco_Hash(uint8_t* input, size_t input_len, uint8_t* out, size_t out_len);
+void disco_HashNew(discoHashCtx* ctx);
+void disco_HashWrite(discoHashCtx* ctx, uint8_t* input, size_t input_len);
+void disco_HashWriteTuple(discoHashCtx* ctx, uint8_t* input, size_t input_len);
+void disco_HashSum(discoHashCtx* ctx, uint8_t* out, size_t out_len);
+void disco_HashResetCtx(discoHashCtx* ctx);
+
+// Key Derivation
+void disco_DeriveKeys(uint8_t* inputKey, size_t key_len, uint8_t* out,
+                      size_t out_len);
+
+// Integrity Protection
+void disco_ProtectIntegrity(uint8_t* key, size_t key_len, uint8_t* data,
+                            size_t data_len, uint8_t* out, size_t out_len);
+bool disco_VerifyIntegrity(uint8_t* key, size_t key_len, uint8_t* data,
+                           size_t data_len, uint8_t* tag, size_t tag_len);
+
+// Pseudo-Random Number Generator
+void disco_RandomSeed(discoRandomCtx* ctx, uint8_t* seed, size_t seed_len);
+void disco_InjectEntropy(discoRandomCtx* ctx, uint8_t* entropy,
+                         size_t entropy_len);
+void disco_RandomGet(discoRandomCtx* ctx, uint8_t* out, size_t out_len);
 ```
 
 ## Need help?
