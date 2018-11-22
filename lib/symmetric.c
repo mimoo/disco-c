@@ -112,3 +112,23 @@ void disco_ProtectIntegrity(uint8_t* key, size_t key_len, uint8_t* data,
   strobe_operate(&strobe, TYPE_AD, data, data_len, false);
   strobe_operate(&strobe, TYPE_MAC, out, out_len, false);
 }
+
+// disco_VerifyIntegrity can be used to verify a `tag` of size `tag_len`
+// produced by disco_ProtectIntegrity with a key of size `key_len` over the
+// `data` of size `data_len`. It returns true if the data has not been modified.
+// False otherwise.
+bool disco_VerifyIntegrity(uint8_t* key, size_t key_len, uint8_t* data,
+                           size_t data_len, uint8_t* tag, size_t tag_len) {
+  assert(key != NULL && key_len >= 16);
+  assert(data != NULL && data_len > 0);
+  assert(tag != NULL && tag_len >= 16);
+
+  strobe_s strobe;
+  strobe_init(&strobe, (uint8_t*)"DiscoMAC", 8);
+  strobe_operate(&strobe, TYPE_AD, key, key_len, false);
+  strobe_operate(&strobe, TYPE_AD, data, data_len, false);
+  if (strobe_operate(&strobe, TYPE_MAC | FLAG_I, tag, tag_len, false) < 0) {
+    return false;
+  }
+  return true;
+}
