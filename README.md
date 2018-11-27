@@ -13,7 +13,7 @@ In order to make this library more stable I need your help. Play with the librar
 Here's how you setup a **server** with the `IK` handshake (the server's identity is known to the client; the client advertises it's identity during the handshake):
 
 ```c
-#include "tweetdisco.h"
+#include "disco_asymmetric.h"
 #include <stdio.h>
 
 int main() {
@@ -63,7 +63,7 @@ int main() {
 Here's how you setup a **client**:
 
 ```c
-#include "tweetdisco.h"
+#include "disco_asymmetric.h"
 #include <stdio.h>
 
 int main() {
@@ -126,7 +126,7 @@ Note that Disco is configured with `Keccak-f[1600]` and `128-bit` of security. T
 To use the **asymmetric handshakes** of Disco, include disco in your project:
 
 ```c
-#include "tweetdisco.h"
+#include "disco_asymmetric.h"
 ```
 
 The available functions are available in the same header. They consists of:
@@ -185,7 +185,7 @@ At the end of the handshake, two strobe state are returned by `disco_WriteMessag
 To use the **symmetric parts** of Disco, include the following file in your projects:
 
 ```c
-#include "symmetric.h"
+#include "disco_symmetric.h"
 ```
 
 The following functions are available:

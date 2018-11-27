@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "tweetdisco.h"
+#include "disco_asymmetric.h"
 
 // helper function to decode hexadecimal string into a buffer. Not the nicest
 // thing but it works.
