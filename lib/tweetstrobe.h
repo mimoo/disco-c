@@ -113,8 +113,8 @@ void strobe_init(strobe_s *strobe, const uint8_t *protocol_name,
                  size_t desclen);
 
 /* Operate on the Strobe object */
-ssize_t strobe_operate(strobe_s *strobe, uint8_t control_flags, uint8_t *buffer,
-                       size_t buffer_len, bool more);
+int strobe_operate(strobe_s *strobe, uint8_t control_flags, uint8_t *buffer,
+                   size_t buffer_len, bool more);
 
 /* Flags as defined in the paper */
 #define FLAG_I (1 << 0) /**< Inbound */

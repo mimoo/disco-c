@@ -1,5 +1,5 @@
-#include "tweetdisco.h"
-#include "symmetric.h"
+#include "disco_asymmetric.h"
+#include "disco_symmetric.h"
 #include <stdio.h>
 
 void test_N() {
@@ -21,8 +21,10 @@ void test_N() {
   uint8_t out[500];
   strobe_s c_write;
   strobe_s c_read;
-  int out_len = disco_WriteMessage(&hs_client, NULL, 0, out, &c_write, &c_read);
-  if (out_len < 0) {
+  size_t out_len;
+  int ret =
+      disco_WriteMessage(&hs_client, NULL, 0, out, &out_len, &c_write, &c_read);
+  if (ret < 0) {
     printf("can't write handshake message\n");
     abort();
   }
@@ -31,15 +33,16 @@ void test_N() {
   assert(strobe_isInitialized(&c_write) && strobe_isInitialized(&c_read));
 
   // debug
-  printf("sent %d bytes\n", out_len);
+  printf("sent %zu bytes\n", out_len);
 
   // process the first handshake message → e, es
   uint8_t in[500];
   strobe_s s_read;
   strobe_s s_write;
-  int in_len =
-      disco_ReadMessage(&hs_server, out, out_len, in, &s_read, &s_write);
-  if (in_len < 0) {
+  size_t in_len;
+  ret = disco_ReadMessage(&hs_server, out, out_len, in, &in_len, &s_read,
+                          &s_write);
+  if (ret < 0) {
     printf("can't read handshake message\n");
     abort();
   }
@@ -47,7 +50,7 @@ void test_N() {
   assert(strobe_isInitialized(&s_write) && strobe_isInitialized(&s_read));
 
   // debug
-  printf("received %d bytes:%s\n", in_len, in);
+  printf("received %zu bytes:%s\n", in_len, in);
 
   // trying to send a post-handshake message
   uint8_t pt_in_place[] =
@@ -85,14 +88,15 @@ void test_NX() {
   // write the first handshake message → e, es
   uint8_t out[500];
   uint8_t text[] = "hey!";
-  int out_len = disco_WriteMessage(&hs_client, text, 5, out, NULL, NULL);
-  if (out_len < 0) {
+  size_t out_len;
+  int ret = disco_WriteMessage(&hs_client, text, 5, out, &out_len, NULL, NULL);
+  if (ret < 0) {
     printf("can't write handshake message\n");
     abort();
   }
 
   // debug
-  printf("sent %d bytes\n", out_len);
+  printf("sent %zu bytes\n", out_len);
   for (int i = 0; i < out_len; i++) {
     printf("%02x", out[i]);
   }
@@ -100,14 +104,15 @@ void test_NX() {
 
   // process the first handshake message → e, es
   uint8_t in[500];
-  int in_len = disco_ReadMessage(&hs_server, out, out_len, in, NULL, NULL);
-  if (in_len < 0) {
+  size_t in_len;
+  ret = disco_ReadMessage(&hs_server, out, out_len, in, &in_len, NULL, NULL);
+  if (ret < 0) {
     printf("can't read handshake message\n");
     abort();
   }
 
   // debug
-  printf("received %d bytes:%s\n", in_len, in);
+  printf("received %zu bytes:%s\n", in_len, in);
   printf("hs_client and hs_server state after first trip\n");
   strobe_print(&(hs_client.symmetric_state.strobe));
   strobe_print(&(hs_server.symmetric_state.strobe));
@@ -116,9 +121,9 @@ void test_NX() {
   printf("\n\npreparing second handshake message ->\n\n");
   strobe_s s_write;
   strobe_s s_read;
-  out_len = disco_WriteMessage(&hs_server, (uint8_t *)"hello hello", 12, out,
-                               &s_read, &s_write);
-  if (out_len < 0) {
+  ret = disco_WriteMessage(&hs_server, (uint8_t *)"hello hello", 12, out,
+                           &out_len, &s_read, &s_write);
+  if (ret < 0) {
     printf("can't write handshake message\n");
     abort();
   }
@@ -127,7 +132,7 @@ void test_NX() {
   assert(s_write.initialized && s_read.initialized);
 
   // debug
-  printf("sent %d bytes:\n", out_len);
+  printf("sent %zu bytes:\n", out_len);
   for (int i = 0; i < out_len; i++) {
     printf("%02x", out[i]);
   }
@@ -137,14 +142,15 @@ void test_NX() {
   printf("\n\nparsing second handshake message <-\n\n");
   strobe_s c_write;
   strobe_s c_read;
-  in_len = disco_ReadMessage(&hs_client, out, out_len, in, &c_write, &c_read);
-  if (in_len < 0) {
+  ret = disco_ReadMessage(&hs_client, out, out_len, in, &in_len, &c_write,
+                          &c_read);
+  if (ret < 0) {
     printf("can't read handshake message\n");
     abort();
   }
 
   // debug
-  printf("received %d bytes:%s\n", in_len, in);
+  printf("received %zu bytes:%s\n", in_len, in);
 
   // should be initialized
   assert(c_write.initialized && c_read.initialized);
@@ -198,14 +204,15 @@ void test_IK() {
   // write the first handshake message → e, es, s, ss
   uint8_t out[500];
   uint8_t text[] = "hey!";
-  int out_len = disco_WriteMessage(&hs_client, text, 5, out, NULL, NULL);
-  if (out_len < 0) {
+  size_t out_len;
+  int ret = disco_WriteMessage(&hs_client, text, 5, out, &out_len, NULL, NULL);
+  if (ret < 0) {
     printf("can't write handshake message\n");
     abort();
   }
 
   // debug
-  printf("sent %d bytes\n", out_len);
+  printf("sent %zu bytes\n", out_len);
   for (int i = 0; i < out_len; i++) {
     printf("%02x", out[i]);
   }
@@ -213,14 +220,15 @@ void test_IK() {
 
   // process the first handshake message
   uint8_t in[500];
-  int in_len = disco_ReadMessage(&hs_server, out, out_len, in, NULL, NULL);
-  if (in_len < 0) {
+  size_t in_len;
+  ret = disco_ReadMessage(&hs_server, out, out_len, in, &in_len, NULL, NULL);
+  if (ret < 0) {
     printf("can't read handshake message\n");
     abort();
   }
 
   // debug
-  printf("received %d bytes:%s\n", in_len, in);
+  printf("received %zu bytes:%s\n", in_len, in);
   printf("hs_client and hs_server state after first trip\n");
   strobe_print(&(hs_client.symmetric_state.strobe));
   strobe_print(&(hs_server.symmetric_state.strobe));
@@ -229,9 +237,9 @@ void test_IK() {
   printf("\n\npreparing second handshake message ->\n\n");
   strobe_s s_write;
   strobe_s s_read;
-  out_len = disco_WriteMessage(&hs_server, (uint8_t *)"hello hello", 12, out,
-                               &s_read, &s_write);
-  if (out_len < 0) {
+  ret = disco_WriteMessage(&hs_server, (uint8_t *)"hello hello", 12, out,
+                           &out_len, &s_read, &s_write);
+  if (ret < 0) {
     printf("can't write handshake message\n");
     abort();
   }
@@ -240,7 +248,7 @@ void test_IK() {
   assert(s_write.initialized && s_read.initialized);
 
   // debug
-  printf("sent %d bytes:\n", out_len);
+  printf("sent %zu bytes:\n", out_len);
   for (int i = 0; i < out_len; i++) {
     printf("%02x", out[i]);
   }
@@ -250,14 +258,15 @@ void test_IK() {
   printf("\n\nparsing second handshake message <-\n\n");
   strobe_s c_write;
   strobe_s c_read;
-  in_len = disco_ReadMessage(&hs_client, out, out_len, in, &c_write, &c_read);
-  if (in_len < 0) {
+  ret = disco_ReadMessage(&hs_client, out, out_len, in, &in_len, &c_write,
+                          &c_read);
+  if (ret < 0) {
     printf("can't read handshake message\n");
     abort();
   }
 
   // debug
-  printf("received %d bytes:%s\n", in_len, in);
+  printf("received %zu bytes:%s\n", in_len, in);
 
   // should be initialized
   assert(c_write.initialized && c_read.initialized);

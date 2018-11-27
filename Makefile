@@ -5,23 +5,23 @@ CFLAGS= -g -O1 -Wall -Werror -std=c99 -fsanitize=address
 
 .PHONY: all clean test test_strobe
 
-all: tweetdisco.a
+all: disco_asymmetric.a
 
 # make a library, is this useful?
-tweetdisco.a: tweetdisco.o tweetstrobe.o tweet25519.o randombytes.o
-	ar -cvq tweetdisco.a tweetdisco.o tweetstrobe.o tweet25519.o randombytes.o
+disco.a: disco_symmetric.o disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o
+	ar -cvq disco_asymmetric.a disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o
 
-# :)
-tweetdisco.o: lib/tweetdisco.c lib/tweetdisco.h
-	$(CC) $(CFLAGS) lib/tweetdisco.c -c -o tweetdisco.o
+# Disco protocol
+disco_asymmetric.o: lib/disco_asymmetric.c lib/disco_asymmetric.h
+	$(CC) $(CFLAGS) lib/disco_asymmetric.c -c -o disco_asymmetric.o
 
-# the symmetric functions wrappers for strobe
-symmetric.o: lib/symmetric.c lib/symmetric.h lib/tweetstrobe.h
-	$(CC) $(CFLAGS) lib/symmetric.c -c -o symmetric.o
+# the disco_symmetric functions wrappers for strobe
+disco_symmetric.o: lib/disco_symmetric.c lib/disco_symmetric.h lib/tweetstrobe.h
+	$(CC) $(CFLAGS) lib/disco_symmetric.c -c -o disco_symmetric.o
 
 # we use this for X25519 (no ed25519)
-tweet25519.o: lib/tweet25519.c lib/tweet25519.h
-	$(CC) $(CFLAGS) lib/tweet25519.c -c -o tweet25519.o
+tweetX25519.o: lib/tweetX25519.c lib/tweetX25519.h
+	$(CC) $(CFLAGS) lib/tweetX25519.c -c -o tweetX25519.o
 
 # we need this for tweetnacl
 randombytes.o: 
@@ -32,9 +32,9 @@ tweetstrobe.o: lib/tweetstrobe.c lib/tweetstrobe.h lib/keccak_f.c.inc
 	$(CC) $(CFLAGS) lib/tweetstrobe.c -c -o tweetstrobe.o
 
 # test is probably how you should compile your own program
-test: lib/test_disco.c tweetdisco.o tweetstrobe.o tweet25519.o randombytes.o symmetric.o
+test: lib/test_disco.c disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o disco_symmetric.o
 	$(CC) $(CFLAGS) -g lib/test_disco.c -c -o test_disco.o
-	$(CC) $(CFLAGS) -g test_disco.o tweetdisco.o symmetric.o tweetstrobe.o tweet25519.o randombytes.o -o test
+	$(CC) $(CFLAGS) -g test_disco.o disco_asymmetric.o disco_symmetric.o tweetstrobe.o tweetX25519.o randombytes.o -o test
 	./test
 
 # test our implementation of tweetstrobe
@@ -45,6 +45,6 @@ test_strobe: lib/test_strobe.c tweetstrobe.o
 
 clean:
 	rm *.o
-	rm -f tweetdisco
+	rm -f disco_asymmetric
 	rm -f test
 	rm -f *.a
