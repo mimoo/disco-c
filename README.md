@@ -2,7 +2,7 @@
 
 **EmbeddedDisco** is a modern protocol and a cryptographic library in C. It offers different ways of encrypting communications, as well as different cryptographic primitives for all of an application's needs. It targets simplicity and minimalism, with around **1,000 lines-of-code**, not a single malloc and a design based solely on the well-accepted SHA-3 and Curve25519 cryptographic primitives.
 
-![short](https://www.cryptologie.net/upload/LOC.png)
+![size](https://www.cryptologie.net/upload/LOC.png)
 
 This repository is light on detail as it is actively under developement. To have a more gentle introduction, [check this blogpost](https://www.cryptologie.net/article/432/introducing-disco/). **The state of this library is quite experimental. Please do not use it in production.** [A more mature implementation of Disco exists in Go](http://discocrypto.com/#/). More implementations are [listed here](https://github.com/mimoo/disco/issues/4).
 
@@ -141,14 +141,14 @@ void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
                       keyPair *e, keyPair *rs, keyPair *re);
 
 // used to generate a handshake message
-ssize_t disco_WriteMessage(handshakeState *hs, uint8_t *payload,
-                           size_t payload_len, uint8_t *message_buffer,
-                           strobe_s *client_s, strobe_s *server_s);
+int disco_WriteMessage(handshakeState *hs, uint8_t *payload, size_t payload_len,
+                       uint8_t *message_buffer, size_t *message_len,
+                       strobe_s *client_s, strobe_s *server_s);
 
 // used to parse a handshake message
-ssize_t disco_ReadMessage(handshakeState *hs, uint8_t *message,
-                          size_t message_len, uint8_t *payload_buffer,
-                          strobe_s *client_s, strobe_s *server_s);
+int disco_ReadMessage(handshakeState *hs, uint8_t *message, size_t message_len,
+                      uint8_t *payload_buffer, size_t *payload_len,
+                      strobe_s *client_s, strobe_s *server_s);
 
 // post-handshake encryption
 void disco_EncryptInPlace(strobe_s *strobe, uint8_t *plaintext,
@@ -159,7 +159,7 @@ bool disco_DecryptInPlace(strobe_s *strobe, uint8_t *ciphertext,
                           size_t ciphertext_len);
 ```
 
-the different handshake patterns are defined in `tweetdisco.h` as:
+the different handshake patterns are defined in `disco_asymmetric.h` as:
 
 * `HANDSHAKE_N`: the server only receives messages (one-way), the client is not authenticated, the client knows the server public key.
 * `HANDSHAKE_K`: the server only receives messages (one-way), the server knows the client public key, the client knows the server public key.
@@ -185,7 +185,7 @@ At the end of the handshake, two strobe state are returned by `disco_WriteMessag
 To use the **symmetric parts** of Disco, include the following file in your projects:
 
 ```c
-#include "disco_symmetric.h"
+#include "symmetric.h"
 ```
 
 The following functions are available:
@@ -219,22 +219,3 @@ void disco_RandomGet(discoRandomCtx* ctx, uint8_t* out, size_t out_len);
 ## Need help?
 
 This library is still heavily experimental. Its goal is to support as many platforms as possible. If you need help making it work for a specific platform please post an issue. If you have feedback, or suggestions, please post an issue as well.
-
-## More
-
-The library is currently optimized for code-size. It was done by:
-
-1. re-writing [Strobe-C](https://strobe.sourceforge.io) to make it smaller in size, simpler and closer to the official specification.
-2. I'm using [tweetNaCl's X25519](https://tweetnacl.cr.yp.to/) implementation. Strobe has one from Mike Hamburg as well. I need to compare. This can be replaced by more robust implementations for hardware devices that want to implement masking and other side-channel mitigation techniques.
-3. I'm using `randombytes()` from [NaCl](https://nacl.cr.yp.to/). The idea here is that any platform can provide a `randombytes` function.
-4. I'm using Mike Hamburg's implementation of Keccak-f which is based on [TweetFIPS202](https://keccak.team/2015/tweetfips202.html). This can be replaced by an application's own optimzed implementation of Keccak-f if developers are willing to increase the code size and decrease the readability.
-
-Here are a list of TODOs:
-
-- [ ] should Disco use [Strobe's Schnorr signature](https://strobe.sourceforge.io/papers/) instead of ed25519? It would be smaller in code size. The problem is that ed25519 is supported in more languages and is well accepted as a standard. On the other hand ed25519 uses SHA-512 which we don't want to support.
-- [ ] write good documentation. Doxygen is really ugly. Is there a better alternative?
-- [ ] figure out if *randombytes* from *nacl* is enough, check what [libhydrogen](https://github.com/jedisct1/libhydrogen) does
-- [ ] go through each TODO in the code
-- [ ] enforce a maximum message length for the readmessage/writemessage functions? (Noise's specification has a limit of 65535 bytes I believe?)
-- [ ] check that I don't crash the application unecessarily (and return errors whenever possible)
-- [ ] cleanup make file, remove -g and ASAN
