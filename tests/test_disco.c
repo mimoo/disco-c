@@ -68,6 +68,7 @@ void test_N() {
     abort();
   }
   printf("final decrypt in place: %s\n", ct_and_mac);
+  free(ct_and_mac);
 }
 
 void test_NX() {
@@ -182,6 +183,7 @@ void test_NX() {
     abort();
   }
   printf("final decrypt in place: %s\n", ct_and_mac);
+  free(ct_and_mac);
 }
 
 void test_IK() {
@@ -303,6 +305,8 @@ void test_IK() {
     abort();
   }
   printf("final decrypt in place: %s\n", ct_and_mac2);
+  free(ct_and_mac);
+  free(ct_and_mac2);
 }
 
 void test_HashInteropGolang() {
