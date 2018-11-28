@@ -32,14 +32,14 @@ tweetstrobe.o: lib/tweetstrobe.c lib/tweetstrobe.h lib/keccak_f.c.inc
 	$(CC) $(CFLAGS) lib/tweetstrobe.c -c -o tweetstrobe.o
 
 # test is probably how you should compile your own program
-test: lib/test_disco.c disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o disco_symmetric.o
-	$(CC) $(CFLAGS) -g lib/test_disco.c -c -o test_disco.o
+test: tests/test_disco.c disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o disco_symmetric.o
+	$(CC) $(CFLAGS) -g tests/test_disco.c -c -o test_disco.o -I lib
 	$(CC) $(CFLAGS) -g test_disco.o disco_asymmetric.o disco_symmetric.o tweetstrobe.o tweetX25519.o randombytes.o -o test
 	./test
 
 # test our implementation of tweetstrobe
-test_strobe: lib/test_strobe.c tweetstrobe.o
-	$(CC) $(CFLAGS) lib/test_strobe.c -c -o test.o
+test_strobe: tests/test_strobe.c tweetstrobe.o
+	$(CC) $(CFLAGS) tests/test_strobe.c -c -o test.o -I lib
 	$(CC) $(CFLAGS) test.o tweetstrobe.o -o test
 	./test
 

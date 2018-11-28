@@ -24,7 +24,7 @@ int main() {
   // init
   strobe_s s1;
   strobe_s s2;
-  unsigned char name[] = "hey";
+  const char name[] = "hey";
   strobe_init(&s1, name, 3);
   strobe_init(&s2, name, 3);
 
