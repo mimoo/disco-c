@@ -16,7 +16,7 @@ void disco_Hash(uint8_t* input, size_t input_len, uint8_t* out,
                 size_t out_len) {
   assert(out_len >= 32);
   strobe_s strobe;
-  strobe_init(&strobe, (uint8_t*)"DiscoHash", 9);
+  strobe_init(&strobe, "DiscoHash", 9);
   strobe_operate(&strobe, TYPE_AD, input, input_len, false);
   strobe_operate(&strobe, TYPE_PRF, out, out_len, false);
 }
@@ -32,7 +32,7 @@ void disco_Hash(uint8_t* input, size_t input_len, uint8_t* out,
 void disco_HashNew(discoHashCtx* ctx) {
   assert(ctx != NULL);
   // can't check if it's already initialized coz memory is uninitialized in C
-  strobe_init(&(ctx->strobe), (uint8_t*)"DiscoHash", 9);
+  strobe_init(&(ctx->strobe), "DiscoHash", 9);
   strobe_operate(&(ctx->strobe), TYPE_AD, NULL, 0,
                  false);  // to start streaming
   ctx->initialized = INITIALIZED;
@@ -87,7 +87,7 @@ void disco_DeriveKeys(uint8_t* inputKey, size_t key_len, uint8_t* out,
   assert(inputKey != NULL && out != NULL);
   assert(key_len >= 16 && out_len > 0);
   strobe_s strobe;
-  strobe_init(&strobe, (uint8_t*)"DiscoKDF", 8);
+  strobe_init(&strobe, "DiscoKDF", 8);
   strobe_operate(&strobe, TYPE_AD, inputKey, key_len, false);
   strobe_operate(&strobe, TYPE_PRF, out, out_len, false);
 }
@@ -107,7 +107,7 @@ void disco_ProtectIntegrity(uint8_t* key, size_t key_len, uint8_t* data,
   assert(out != NULL && out_len >= 16);
 
   strobe_s strobe;
-  strobe_init(&strobe, (uint8_t*)"DiscoMAC", 8);
+  strobe_init(&strobe, "DiscoMAC", 8);
   strobe_operate(&strobe, TYPE_AD, key, key_len, false);
   strobe_operate(&strobe, TYPE_AD, data, data_len, false);
   strobe_operate(&strobe, TYPE_MAC, out, out_len, false);
@@ -124,7 +124,7 @@ bool disco_VerifyIntegrity(uint8_t* key, size_t key_len, uint8_t* data,
   assert(tag != NULL && tag_len >= 16);
 
   strobe_s strobe;
-  strobe_init(&strobe, (uint8_t*)"DiscoMAC", 8);
+  strobe_init(&strobe, "DiscoMAC", 8);
   strobe_operate(&strobe, TYPE_AD, key, key_len, false);
   strobe_operate(&strobe, TYPE_AD, data, data_len, false);
   if (strobe_operate(&strobe, TYPE_MAC | FLAG_I, tag, tag_len, false) < 0) {
@@ -143,7 +143,7 @@ bool disco_VerifyIntegrity(uint8_t* key, size_t key_len, uint8_t* data,
 void disco_RandomSeed(discoRandomCtx* ctx, uint8_t* seed, size_t seed_len) {
   assert(ctx != NULL);
   assert(seed != NULL && seed_len > 16);
-  strobe_init(&(ctx->strobe), (uint8_t*)"DiscoPRNG", 9);
+  strobe_init(&(ctx->strobe), "DiscoPRNG", 9);
   strobe_operate(&(ctx->strobe), TYPE_AD, seed, seed_len, false);
   ctx->initialized = INITIALIZED;
 }

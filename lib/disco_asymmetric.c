@@ -8,8 +8,29 @@
 #include <stdbool.h>
 
 //
-// Crypto
+// Handshake Patterns
+// ==================
+// Handshake patterns are written as string literals, where every character
+// represent a token. This is implementation-specific and you can safely ignore
+// this if you are not auditing the code.
+
+// clang-format off
+#define token_e        'e'
+#define token_s        's'
+#define token_ee       'E'
+#define token_es       'R'
+#define token_se       'D'
+#define token_ss       'S'
+#define token_psk      'p'
+
+#define token_end_turn      '|'
+#define token_end_handshake '\0'
+// clang-format on
+
 //
+// Asymmetric Cryptography
+// ======
+// Used for key exchanges.
 
 /**
  * disco_generateKeyPair can be used to generate a X25519 keypair. This is
@@ -28,9 +49,11 @@ void DH(keyPair mine, keyPair theirs, uint8_t *output) {
 
 //
 // SymmetricState
-//
+// ==============
+// Refer to the Disco specification to understand the meaning of these
+// functions.
 
-void initializeSymmetric(symmetricState *ss, uint8_t *protocol_name,
+void initializeSymmetric(symmetricState *ss, const char *protocol_name,
                          size_t protocol_name_len) {
   strobe_init(&(ss->strobe), protocol_name, protocol_name_len);
 }
@@ -112,8 +135,10 @@ void split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
 }
 
 //
-// handshakeState
-//
+// HandshakeState
+// ==============
+// Refer to the Disco specification to understand the meaning of these
+// functions.
 
 // destroy removes any secret information contained in the handshakeState passed
 // as argument
@@ -161,28 +186,20 @@ void destroy(handshakeState *hs) {
  * @re           NULL or a keypair containing the remote peer's ephemeral key
  * (see fallback patterns in the Noise specification).
  */
-void disco_Initialize(handshakeState *hs, const handshakePattern hp,
+void disco_Initialize(handshakeState *hs, const char *handshake_pattern,
                       bool initiator, uint8_t *prologue, size_t prologue_len,
                       keyPair *s, keyPair *e, keyPair *rs, keyPair *re) {
-  assert(hs != NULL);
+  assert(handshake_pattern != NULL);
   assert((prologue_len > 0 && prologue != NULL) ||
          (prologue_len == 0 && prologue == NULL));
 
-  // checking if keys are set correctly
-  if (strcmp((const char *)hp.name, "N") == 0) {
-    assert((initiator && rs) || (!initiator && s));
-  }
-  // TODO: more checks that we're initializing with the correct keys depending
-  // on the handshake pattern
-
-  // derive protocol name
-  char protocol_name[40];  // 27 + \0 (removed later) + "psk0" + "psk1" +
-                           // "psk2" <
-                           // 40 // TODO: DEFFERED PATTERNS?
-  sprintf(protocol_name, "Noise_%s_25519_STROBEv1.0.2", hp.name);
-
-  initializeSymmetric(&(hs->symmetric_state), (uint8_t *)protocol_name,
-                      strlen((char *)protocol_name));
+  // handshake_pattern is of the following form:
+  // "protocol_name \x00 pre-message patterns \x00 message patterns"
+  printf("debug1:%s\n", handshake_pattern);
+  initializeSymmetric(&(hs->symmetric_state), handshake_pattern,
+                      strlen(handshake_pattern));
+  handshake_pattern = handshake_pattern + strlen(handshake_pattern) + 1;
+  printf("debug2:%s\n", handshake_pattern);
 
   hs->symmetric_state.isKeyed = false;
 
@@ -219,13 +236,12 @@ void disco_Initialize(handshakeState *hs, const handshakePattern hp,
   hs->sending = initiator;
   hs->handshake_done = false;
 
-  // pre-message
+  // pre-messages
   bool direction = true;
-  token current_token = token_end_turn;
-  for (uint8_t token_counter = 0; current_token != token_end_handshake;
-       token_counter++) {
-    current_token = hp.pre_message_patterns[token_counter];
-    switch (current_token) {
+  // handshake_pattern is of the following form:
+  // pre_message_patterns | token_end_handshake | message_patterns"
+  while (*handshake_pattern != token_end_handshake) {
+    switch (*handshake_pattern) {
       case token_s:
         if ((initiator && direction) || (!initiator && !direction)) {
           mixHash(&(hs->symmetric_state), hs->s.pub, 32);
@@ -248,10 +264,12 @@ void disco_Initialize(handshakeState *hs, const handshakePattern hp,
       default:
         assert(false);
     }
+    // next token
+    handshake_pattern++;
   }
 
   // point to message patterns
-  hs->message_patterns = hp.message_patterns;
+  hs->message_patterns = handshake_pattern + 1;
 }
 
 /**
@@ -294,7 +312,7 @@ int disco_WriteMessage(handshakeState *hs, uint8_t *payload, size_t payload_len,
   uint8_t DH_result[32];
 
   // state machine
-  token *current_token = hs->message_patterns;
+  const char *current_token = hs->message_patterns;
   while (true) {
     switch (*current_token) {
       case token_e:
@@ -410,7 +428,7 @@ int disco_ReadMessage(handshakeState *hs, uint8_t *message, size_t message_len,
   uint8_t DH_result[32];
 
   // state machine
-  token *current_token = hs->message_patterns;
+  const char *current_token = hs->message_patterns;
   while (true) {
     switch (*current_token) {
       case token_e:

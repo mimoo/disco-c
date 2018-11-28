@@ -1,9 +1,13 @@
 /**
- * \mainpage The EmbeddedDisco Library
- * \section Introduction
- * Hello hello
+ * The EmbeddedDisco Library
+ * =========================
+ *
+ * This protocol was designed and implemented by David Wong.
+ * - contact: david.wong@nccgroup.trust
+ * - more info: www.embeddeddisco.com
  *
  */
+
 #ifndef __DISCO_H__
 #define __DISCO_H__
 
@@ -24,127 +28,31 @@ typedef struct keyPair_ {
 } keyPair;
 
 //
-// handshake pattern
+// Handshake Patterns
+// =================
+// The following defines were generated using python
+// You can manually audit the handshake_patterns.py file
+
+#define HANDSHAKE_N "Noise_N_25519_STROBEv1.0.2\0|s\0eR\0"
+#define HANDSHAKE_K "Noise_K_25519_STROBEv1.0.2\0s|s\0eRS\0"
+#define HANDSHAKE_X "Noise_X_25519_STROBEv1.0.2\0|s\0eRsS\0"
+#define HANDSHAKE_NN "Noise_NN_25519_STROBEv1.0.2\0\0e|eE\0"
+#define HANDSHAKE_KN "Noise_KN_25519_STROBEv1.0.2\0s\0e|eED\0"
+#define HANDSHAKE_NK "Noise_NK_25519_STROBEv1.0.2\0|s\0eR|eE\0"
+#define HANDSHAKE_KK "Noise_KK_25519_STROBEv1.0.2\0s|s\0eRS|eED\0"
+#define HANDSHAKE_NX "Noise_NX_25519_STROBEv1.0.2\0\0e|eEsR\0"
+#define HANDSHAKE_KX "Noise_KX_25519_STROBEv1.0.2\0s\0e|eEDsR\0"
+#define HANDSHAKE_XN "Noise_XN_25519_STROBEv1.0.2\0\0e|eE|sD\0"
+#define HANDSHAKE_IN "Noise_IN_25519_STROBEv1.0.2\0\0es|eED\0"
+#define HANDSHAKE_XK "Noise_XK_25519_STROBEv1.0.2\0|s\0eR|eE|sD\0"
+#define HANDSHAKE_IK "Noise_IK_25519_STROBEv1.0.2\0|s\0eRsS|eED\0"
+#define HANDSHAKE_XX "Noise_XX_25519_STROBEv1.0.2\0\0e|eEsR|sD\0"
+#define HANDSHAKE_IX "Noise_IX_25519_STROBEv1.0.2\0\0es|eEDsR\0"
+
 //
-
-// tokens
-typedef enum token {
-  token_e = 1,
-  token_s = 2,
-  token_ee = 3,
-  token_es = 4,
-  token_se = 5,
-  token_ss = 6,
-  token_end_turn = 7,
-  token_end_handshake = 8
-} token;
-
-typedef struct handshakePattern_ {
-  char *name;
-  token *pre_message_patterns;
-  token *message_patterns;
-} handshakePattern;
-
-#define HANDSHAKE_N                                                           \
-  (const handshakePattern) {                                                  \
-    .name = "N", .pre_message_patterns =                                      \
-                     (token[]){token_end_turn, token_s, token_end_handshake}, \
-    .message_patterns = (token[]) {                                           \
-      token_e, token_es, token_end_handshake                                  \
-    }                                                                         \
-  }
-#define HANDSHAKE_K                                                       \
-  (const handshakePattern) {                                              \
-    .name = "K",                                                          \
-    .pre_message_patterns =                                               \
-        (token[]){token_s, token_end_turn, token_s, token_end_handshake}, \
-    .message_patterns = (token[]) {                                       \
-      token_e, token_es, token_ss, token_end_handshake                    \
-    }                                                                     \
-  }
-#define HANDSHAKE_X                                                           \
-  (const handshakePattern) {                                                  \
-    .name = "X", .pre_message_patterns =                                      \
-                     (token[]){token_end_turn, token_s, token_end_handshake}, \
-    .message_patterns = (token[]) {                                           \
-      token_e, token_es, token_s, token_ss, token_end_handshake               \
-    }                                                                         \
-  }
-#define HANDSHAKE_NK                                                           \
-  (const handshakePattern) {                                                   \
-    .name = "NK", .pre_message_patterns =                                      \
-                      (token[]){token_end_turn, token_s, token_end_handshake}, \
-    .message_patterns = (token[]) {                                            \
-      token_e, token_es, token_end_turn, token_e, token_ee,                    \
-          token_end_handshake                                                  \
-    }                                                                          \
-  }
-#define HANDSHAKE_KK                                                      \
-  (const handshakePattern) {                                              \
-    .name = "KK",                                                         \
-    .pre_message_patterns =                                               \
-        (token[]){token_s, token_end_turn, token_s, token_end_handshake}, \
-    .message_patterns = (token[]) {                                       \
-      token_e, token_es, token_ss, token_end_turn, token_e, token_ee,     \
-          token_se, token_end_handshake                                   \
-    }                                                                     \
-  }
-#define HANDSHAKE_NX                                                      \
-  (const handshakePattern) {                                              \
-    .name = "NX", .pre_message_patterns = (token[]){token_end_handshake}, \
-    .message_patterns = (token[]) {                                       \
-      token_e, token_end_turn, token_e, token_ee, token_s, token_es,      \
-          token_end_handshake                                             \
-    }                                                                     \
-  }
-#define HANDSHAKE_KX                                                           \
-  (const handshakePattern) {                                                   \
-    .name = "KX",                                                              \
-    .pre_message_patterns = (token[]){token_s, token_end_handshake},           \
-    .message_patterns = (token[]) {                                            \
-      token_e, token_end_turn, token_e, token_ee, token_se, token_s, token_es, \
-          token_end_handshake                                                  \
-    }                                                                          \
-  }
-#define HANDSHAKE_XK                                                           \
-  (const handshakePattern) {                                                   \
-    .name = "XK", .pre_message_patterns =                                      \
-                      (token[]){token_end_turn, token_s, token_end_handshake}, \
-    .message_patterns = (token[]) {                                            \
-      token_e, token_es, token_end_turn, token_e, token_ee, token_end_turn,    \
-          token_s, token_se, token_end_handshake                               \
-    }                                                                          \
-  }
-#define HANDSHAKE_IK                                                           \
-  (const handshakePattern) {                                                   \
-    .name = "IK", .pre_message_patterns =                                      \
-                      (token[]){token_end_turn, token_s, token_end_handshake}, \
-    .message_patterns = (token[]) {                                            \
-      token_e, token_es, token_s, token_ss, token_end_turn, token_e, token_ee, \
-          token_se, token_end_handshake                                        \
-    }                                                                          \
-  }
-
-#define HANDSHAKE_XX                                                      \
-  (const handshakePattern) {                                              \
-    .name = "XX", .pre_message_patterns = (token[]){token_end_handshake}, \
-    .message_patterns = (token[]) {                                       \
-      token_e, token_end_turn, token_e, token_ee, token_s, token_es,      \
-          token_end_turn, token_s, token_se, token_end_handshake          \
-    }                                                                     \
-  }
-
-#define HANDSHAKE_IX                                                          \
-  (const handshakePattern) {                                                  \
-    .name = "IX", .pre_message_patterns = (token[]){token_end_handshake},     \
-    .message_patterns = (token[]) {                                           \
-      token_e, token_s, token_end_turn, token_e, token_ee, token_se, token_s, \
-          token_es, token_end_handshake                                       \
-    }                                                                         \
-  }
-//
-// states
-//
+// States
+// ======
+// See the Disco specification to understand the meaning of these states.
 
 typedef struct symmetricState_ {
   strobe_s strobe;
@@ -160,18 +68,22 @@ typedef struct handshakeState_ {
   keyPair re;
 
   bool initiator;
-  token *message_patterns;
+  const char *message_patterns;
   bool sending;
   bool handshake_done;
 } handshakeState;
 
-// utility
+//
+// Public API
+// ==========
+
+// utility function
 void disco_generateKeyPair(keyPair *kp);
 
 // handshake
-void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
-                      uint8_t *prologue, size_t prologue_len, keyPair *s,
-                      keyPair *e, keyPair *rs, keyPair *re);
+void disco_Initialize(handshakeState *hs, const char *handshake_pattern,
+                      bool initiator, uint8_t *prologue, size_t prologue_len,
+                      keyPair *s, keyPair *e, keyPair *rs, keyPair *re);
 int disco_WriteMessage(handshakeState *hs, uint8_t *payload, size_t payload_len,
                        uint8_t *message_buffer, size_t *message_len,
                        strobe_s *client_s, strobe_s *server_s);
@@ -184,5 +96,9 @@ void disco_EncryptInPlace(strobe_s *strobe, uint8_t *plaintext,
                           size_t plaintext_len, size_t plaintext_capacity);
 bool disco_DecryptInPlace(strobe_s *strobe, uint8_t *ciphertext,
                           size_t ciphertext_len);
+
+//
+//
+//
 
 #endif /* __DISCO_H__ */

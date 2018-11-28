@@ -158,7 +158,7 @@ int strobe_operate(strobe_s *strobe, uint8_t flags, uint8_t *buffer,
   return _strobe_duplex(strobe, buffer, buffer_len, cbefore, cafter, recv_MAC);
 }
 
-void strobe_init(strobe_s *strobe, const uint8_t *protocol_name,
+void strobe_init(strobe_s *strobe, const char *protocol_name,
                  size_t protocol_name_len) {
   const uint8_t proto[18] = {
       1, RATE + PAD_BYTES, 1, 0, /* Empty NIST perso string */

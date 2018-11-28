@@ -109,8 +109,7 @@ typedef struct strobe_s_ {
 } strobe_s;
 
 /* Initialize a Strobe object with a protocol name */
-void strobe_init(strobe_s *strobe, const uint8_t *protocol_name,
-                 size_t desclen);
+void strobe_init(strobe_s *strobe, const char *protocol_name, size_t desclen);
 
 /* Operate on the Strobe object */
 int strobe_operate(strobe_s *strobe, uint8_t control_flags, uint8_t *buffer,
