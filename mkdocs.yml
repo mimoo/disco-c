@@ -1,6 +1,7 @@
 site_name: EmbeddedDisco
 nav:
     - Home: index.md
+    - Get Started: get_started.md
     - Source Code: https://www.github.com/mimoo/disco-c
     - Specification: https://www.discocrypto.com/disco.html
     - About: about.md

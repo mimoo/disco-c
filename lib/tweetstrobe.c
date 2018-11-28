@@ -76,8 +76,8 @@ static inline void _begin_op(strobe_s *strobe, uint8_t flags) {
 }
 
 /* The core duplex mode */
-static int _strobe_duplex(strobe_s *strobe, uint8_t *buffer, size_t buffer_len,
-                          bool cbefore, bool cafter, bool recv_MAC) {
+static bool _strobe_duplex(strobe_s *strobe, uint8_t *buffer, size_t buffer_len,
+                           bool cbefore, bool cafter, bool recv_MAC) {
   // get our position in state
   unsigned int pos = strobe->position;
 
@@ -116,21 +116,21 @@ static int _strobe_duplex(strobe_s *strobe, uint8_t *buffer, size_t buffer_len,
   // recv_MAC
   if (recv_MAC) {
     if (MAC_verif == 0) {
-      return 0;
+      return true;
     } else {
-      return -1;
+      return false;
     }
   }
 
   //
-  return 0;
+  return true;
 }
 
 // strobe_operate
 // Note: if you're using PRF, RATCHET or send_MAC. Your buffer needs to be
 // initialized with 0s.
-int strobe_operate(strobe_s *strobe, uint8_t flags, uint8_t *buffer,
-                   size_t buffer_len, bool more) {
+bool strobe_operate(strobe_s *strobe, uint8_t flags, uint8_t *buffer,
+                    size_t buffer_len, bool more) {
   assert(strobe->position < RATE);
 
   // set buffer to 0 if RATCHET, send_MAC or PRF

@@ -28,8 +28,9 @@ int main() {
 
   // process the first handshake message → e, es, s, ss
   u8 in[500];
-  ssize_t in_len = disco_ReadMessage(&hs_server, out, out_len, in, NULL, NULL);
-  if (in_len < 0) {
+  size_t in_len
+  bool ret = disco_ReadMessage(&hs_server, out, out_len, in, &in_len, NULL, NULL);
+  if (!ret) {
     abort();
   }
 
@@ -39,9 +40,10 @@ int main() {
   // create second handshake message ← e, ee, se
   strobe_s s_write;
   strobe_s s_read;
-  ssize_t out_len = disco_WriteMessage(&hs_server, (u8 *)"second payload", 15,
-                                       out, &s_read, &s_write);
-  if (out_len < 0) {
+  size_t out_len;
+  ret = disco_WriteMessage(&hs_server, (u8 *)"second payload", 15,
+                                       out, &out_len, &s_read, &s_write);
+  if (!ret) {
     abort();
   }
 
@@ -85,18 +87,20 @@ int main() {
 
   // write the first handshake message → e, es, s, ss
   u8 out[500];
-  ssize_t out_len =
-      disco_WriteMessage(&hs_client, (u8*)"hey!", 5, out, NULL, NULL);
-  if (out_len < 0) {
+  size_t out_len;
+  bool ret =
+      disco_WriteMessage(&hs_client, (u8*)"hey!", 5, out, &out_len, NULL, NULL);
+  if (!ret) {
     abort();
   }
 
   // process second handshake message ← e, ee, se
   strobe_s c_write;
   strobe_s c_read;
-  ssize_t in_len =
-      disco_ReadMessage(&hs_client, out, out_len, in, &c_write, &c_read);
-  if (in_len < 0) {
+  size_t in_len;
+  ret =
+      disco_ReadMessage(&hs_client, out, out_len, in, &in_len, &c_write, &c_read);
+  if (!ret) {
     abort();
   }
 
@@ -117,104 +121,22 @@ int main() {
 }
 ```
 
+To use the symmetric parts of the library, simply include `disco_symmetric.h`:
+
+```c
+#include "disco_symmetric.h"
+
+int main() {
+  uint8_t input[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  uint8_t out[32];
+  // here is how we hash something
+  disco_Hash(input, 10, out, 32);
+}
+```
+
 ## How to use?
 
-Note that Disco is configured with `Keccak-f[1600]` and `128-bit` of security. This settings can be changed for `keccak-f[800]`/`keccak-f[400]` or `256-bit` of security. This is all done in `tweetstrobe.h` by defining `STROBE_INTEROP_SECURITY_BITS` and `KECCAK_INTEROP_F_BITS`.
-
-## Establishing a secure session between two peers
-
-To use the **asymmetric handshakes** of Disco, include disco in your project:
-
-```c
-#include "disco_asymmetric.h"
-```
-
-The available functions are available in the same header. They consists of:
-
-```c
-// used to generate long-term key pairs
-void disco_generateKeyPair(keyPair *kp);
-
-// used to initialized your handshakeState with a handshake pattern
-void disco_Initialize(handshakeState *hs, handshakePattern hp, bool initiator,
-                      uint8_t *prologue, size_t prologue_len, keyPair *s,
-                      keyPair *e, keyPair *rs, keyPair *re);
-
-// used to generate a handshake message
-int disco_WriteMessage(handshakeState *hs, uint8_t *payload, size_t payload_len,
-                       uint8_t *message_buffer, size_t *message_len,
-                       strobe_s *client_s, strobe_s *server_s);
-
-// used to parse a handshake message
-int disco_ReadMessage(handshakeState *hs, uint8_t *message, size_t message_len,
-                      uint8_t *payload_buffer, size_t *payload_len,
-                      strobe_s *client_s, strobe_s *server_s);
-
-// post-handshake encryption
-void disco_EncryptInPlace(strobe_s *strobe, uint8_t *plaintext,
-                          size_t plaintext_len, size_t plaintext_capacity);
-
-// post-handshake decryption
-bool disco_DecryptInPlace(strobe_s *strobe, uint8_t *ciphertext,
-                          size_t ciphertext_len);
-```
-
-the different handshake patterns are defined in `disco_asymmetric.h` as:
-
-* `HANDSHAKE_N`: the server only receives messages (one-way), the client is not authenticated, the client knows the server public key.
-* `HANDSHAKE_K`: the server only receives messages (one-way), the server knows the client public key, the client knows the server public key.
-* `HANDSHAKE_X`: the server only receives messages (one-way), the client transmits its public key during the handshake, the client knows the server public key.
-* `HANDSHAKE_NK`: the client is not authenticated, the client knows the server public key.
-* `HANDSHAKE_KK`: the server knows the client public key, the client knows the server public key.
-* `HANDSHAKE_NX`: the client is not authenticated, the server transmits its public key during the handshake.
-* `HANDSHAKE_KX`: the server knows the client public key, the server transmits its public key during the handshake.
-* `HANDSHAKE_XK`: the client transmits its public key during the handshake, the client knows the server public key.
-* `HANDSHAKE_IK`: the client transmits its public key during the handshake, the client knows the server public key.
-* `HANDSHAKE_XX`: the client transmits its public key during the handshake, the server transmits its public key during the handshake.
-* `HANDSHAKE_IX`: the client transmits its public key during the handshake, the server transmits its public key during the handshake.
-
-Refer to the [Noise specification](http://noiseprotocol.org/noise.html) to know:
-
-* how many messages to write or read for a specific handshake pattern
-* what the security properties of the handshake pattern are
-
-At the end of the handshake, two strobe state are returned by `disco_WriteMessage` and `disco_ReadMessage`. One is for the client to encrypt to the server and the other is for the server to encrypt to the client.
-
-## Hashing, Encrypting, Authenticating, Deriving Keys, etc.
-
-To use the **symmetric parts** of Disco, include the following file in your projects:
-
-```c
-#include "symmetric.h"
-```
-
-The following functions are available:
-
-```c
-// Hashing
-void disco_Hash(uint8_t* input, size_t input_len, uint8_t* out, size_t out_len);
-void disco_HashNew(discoHashCtx* ctx);
-void disco_HashWrite(discoHashCtx* ctx, uint8_t* input, size_t input_len);
-void disco_HashWriteTuple(discoHashCtx* ctx, uint8_t* input, size_t input_len);
-void disco_HashSum(discoHashCtx* ctx, uint8_t* out, size_t out_len);
-void disco_HashResetCtx(discoHashCtx* ctx);
-
-// Key Derivation
-void disco_DeriveKeys(uint8_t* inputKey, size_t key_len, uint8_t* out,
-                      size_t out_len);
-
-// Integrity Protection
-void disco_ProtectIntegrity(uint8_t* key, size_t key_len, uint8_t* data,
-                            size_t data_len, uint8_t* out, size_t out_len);
-bool disco_VerifyIntegrity(uint8_t* key, size_t key_len, uint8_t* data,
-                           size_t data_len, uint8_t* tag, size_t tag_len);
-
-// Pseudo-Random Number Generator
-void disco_RandomSeed(discoRandomCtx* ctx, uint8_t* seed, size_t seed_len);
-void disco_InjectEntropy(discoRandomCtx* ctx, uint8_t* entropy,
-                         size_t entropy_len);
-void disco_RandomGet(discoRandomCtx* ctx, uint8_t* out, size_t out_len);
-```
+[Check the documentation](https://www.embeddeddisco.com) here.
 
 ## Need help?
 

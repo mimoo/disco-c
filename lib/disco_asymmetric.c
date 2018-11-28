@@ -307,9 +307,10 @@ void disco_Initialize(handshakeState *hs, const char *handshake_pattern,
  * the handshake.
  * @return the length of the content written in `message_buffer`.
  */
-int disco_WriteMessage(handshakeState *hs, uint8_t *payload, size_t payload_len,
-                       uint8_t *message_buffer, size_t *message_len,
-                       strobe_s *client_s, strobe_s *server_s) {
+bool disco_WriteMessage(handshakeState *hs, uint8_t *payload,
+                        size_t payload_len, uint8_t *message_buffer,
+                        size_t *message_len, strobe_s *client_s,
+                        strobe_s *server_s) {
   assert(hs != NULL && message_buffer != NULL);
   assert(
       (payload == NULL && payload_len == 0) ||
@@ -405,7 +406,7 @@ payload:
   *message_len = p - message_buffer;
 
   //
-  return 0;
+  return true;
 }
 
 /**
@@ -426,15 +427,15 @@ payload:
  * processing the end of the handshake.
  * @return                the length of the content written in `payload_buffer`.
  */
-int disco_ReadMessage(handshakeState *hs, uint8_t *message, size_t message_len,
-                      uint8_t *payload_buffer, size_t *payload_len,
-                      strobe_s *client_s, strobe_s *server_s) {
+bool disco_ReadMessage(handshakeState *hs, uint8_t *message, size_t message_len,
+                       uint8_t *payload_buffer, size_t *payload_len,
+                       strobe_s *client_s, strobe_s *server_s) {
   assert(hs != NULL && message != NULL && payload_buffer != NULL);
   assert(hs->handshake_done == false && hs->sending == false);
   assert(hs->message_patterns != NULL);
 
   if (message_len >= 65535) {
-    return -1;
+    return false;
   }
   uint8_t DH_result[32];
 
@@ -444,7 +445,7 @@ int disco_ReadMessage(handshakeState *hs, uint8_t *message, size_t message_len,
     switch (*current_token) {
       case token_e:
         if (message_len < 32) {
-          return -1;
+          return false;
         }
         assert(!hs->re.isSet);
         memcpy(hs->re.pub, message, 32);
@@ -460,13 +461,13 @@ int disco_ReadMessage(handshakeState *hs, uint8_t *message, size_t message_len,
           ciphertext_len += 16;
         }
         if (message_len < ciphertext_len) {
-          return -1;
+          return false;
         }
 
         bool res =
             decryptAndHash(&(hs->symmetric_state), message, ciphertext_len);
         if (!res) {
-          return -1;
+          return false;
         }
         memcpy(hs->rs.pub, message, 32);
         message_len -= ciphertext_len;
@@ -514,11 +515,11 @@ int disco_ReadMessage(handshakeState *hs, uint8_t *message, size_t message_len,
 payload:
   // Decrypt payload
   if (hs->symmetric_state.isKeyed && message_len < 16) {  // a tag must be here
-    return -1;
+    return false;
   }
   bool res = decryptAndHash(&(hs->symmetric_state), message, message_len);
   if (!res) {
-    return -1;  // TODO: should we return different errors?
+    return false;  // TODO: should we return different errors?
   }
   if (hs->symmetric_state.isKeyed) {
     message_len -= 16;  // remove the authentication tag if there is one
@@ -536,7 +537,7 @@ payload:
   *payload_len = message_len;
 
   // return length of what was read into buffer
-  return 0;
+  return true;
 }
 
 // disco_EncryptInPlace takes a plaintext and replaces it with the encrypted

@@ -112,8 +112,8 @@ typedef struct strobe_s_ {
 void strobe_init(strobe_s *strobe, const char *protocol_name, size_t desclen);
 
 /* Operate on the Strobe object */
-int strobe_operate(strobe_s *strobe, uint8_t control_flags, uint8_t *buffer,
-                   size_t buffer_len, bool more);
+bool strobe_operate(strobe_s *strobe, uint8_t control_flags, uint8_t *buffer,
+                    size_t buffer_len, bool more);
 
 /* Flags as defined in the paper */
 #define FLAG_I (1 << 0) /**< Inbound */
@@ -135,7 +135,6 @@ int strobe_operate(strobe_s *strobe, uint8_t control_flags, uint8_t *buffer,
 
 bool strobe_isInitialized(strobe_s *strobe);
 void strobe_destroy(strobe_s *strobe);
-// void strobe_clone(const strobe_s *src, strobe_s *dst);
 void strobe_print(const strobe_s *strobe);
 
 #endif /* __STROBE_H__ */
