@@ -71,6 +71,8 @@ typedef struct handshakeState_ {
   const char *message_patterns;
   bool sending;
   bool handshake_done;
+
+  bool half_duplex;
 } handshakeState;
 
 //

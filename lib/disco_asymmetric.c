@@ -116,22 +116,30 @@ bool decryptAndHash(symmetricState *ss, uint8_t *ciphertext,
 // but allocated strobe state s2
 // TODO: perhaps return only s1 if this is a one-way handshake pattern?
 // TODO: how do I ensure that a server don't send msg on a one-way hp?
-void split(symmetricState *ss, strobe_s *s1, strobe_s *s2) {
-  assert(s1 != NULL && s2 != NULL);
+void split(symmetricState *ss, strobe_s *s1, strobe_s *s2, bool half_duplex) {
+  assert(s1 != NULL);
+  if (!half_duplex) {
+    assert(s2 != NULL);
+  }
 
   // s1 = our current strobe state
   *s1 = ss->strobe;
-  // s2 = s1
-  *s2 = ss->strobe;
+  if (!half_duplex) {
+    // s2 = s1
+    *s2 = ss->strobe;
+  }
 
   // differentiate by aborbing different domain strings
   strobe_operate(s1, TYPE_AD | FLAG_M, (uint8_t *)"initiator", 9, false);
-  strobe_operate(s2, TYPE_AD | FLAG_M, (uint8_t *)"responder", 9, false);
-
+  if (!half_duplex) {
+    strobe_operate(s2, TYPE_AD | FLAG_M, (uint8_t *)"responder", 9, false);
+  }
   // forward-secrecy
   unsigned char ratchet_buffer[32];
   strobe_operate(s1, TYPE_RATCHET, ratchet_buffer, 32, false);
-  strobe_operate(s2, TYPE_RATCHET, ratchet_buffer, 32, false);
+  if (!half_duplex) {
+    strobe_operate(s2, TYPE_RATCHET, ratchet_buffer, 32, false);
+  }
 }
 
 //
@@ -270,6 +278,9 @@ void disco_Initialize(handshakeState *hs, const char *handshake_pattern,
 
   // point to message patterns
   hs->message_patterns = handshake_pattern + 1;
+
+  // half duplex is disabled by default
+  hs->half_duplex = false;
 }
 
 /**
@@ -385,7 +396,7 @@ payload:
 
   // Split?
   if (hs->handshake_done == true) {
-    split(&(hs->symmetric_state), client_s, server_s);
+    split(&(hs->symmetric_state), client_s, server_s, hs->half_duplex);
     hs->message_patterns = NULL;
     destroy(hs);
   }
@@ -516,7 +527,7 @@ payload:
 
   // Split?
   if (hs->handshake_done == true) {
-    split(&(hs->symmetric_state), client_s, server_s);
+    split(&(hs->symmetric_state), client_s, server_s, hs->half_duplex);
     hs->message_patterns = NULL;
     destroy(hs);
   }
