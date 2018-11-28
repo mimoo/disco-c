@@ -39,53 +39,52 @@ int main() {
   print("0. hello", buffer, 7);
 
   // 1. send_ENC
-  ssize_t ret = strobe_operate(&s1, TYPE_ENC, buffer, 7, false);
-  if (ret < 0) {
+  bool ret = strobe_operate(&s1, TYPE_ENC, buffer, 7, false);
+  if (!ret) {
     printf("error\n");
     return 1;
   }
-  printf("debug%ld\n", ret);
-  print("1. E(hello)", buffer, ret);
-  assert_eq((const char *)buffer, "\x3b\x89\xe8\x2e\xb0\x7c\xfd", ret);
+  print("1. E(hello)", buffer, 7);
+  assert_eq((const char *)buffer, "\x3b\x89\xe8\x2e\xb0\x7c\xfd", 7);
 
   // send_MAC
-  ssize_t ret2 = strobe_operate(&s1, TYPE_MAC, buffer + 7, 16, false);
-  if (ret2 < 0) {
+  ret = strobe_operate(&s1, TYPE_MAC, buffer + 7, 16, false);
+  if (!ret) {
     printf("error2\n");
     return 1;
   }
-  print("2. send_MAC", buffer, ret + ret2);
-  assert_eq((const char *)buffer + ret,
+  print("2. send_MAC", buffer, 7 + 16);
+  assert_eq((const char *)buffer + 7,
             "\x0e\x8b\x81\xb2\x7b\xdb\x4d\x35\xf1\x54\x9a\xf7\x54\xdf\x06\xab",
-            ret2);
+            16);
 
   // recv_ENC
   ret = strobe_operate(&s2, TYPE_ENC | FLAG_I, buffer, 7, false);
-  if (ret < 0) {
+  if (!ret) {
     printf("error2\n");
     return 1;
   }
-  print("3. recv_ENC", buffer, ret);
-  assert_eq((const char *)buffer, "\x68\x65\x6c\x6c\x6f\x0a\x00", ret);
+  print("3. recv_ENC", buffer, 7);
+  assert_eq((const char *)buffer, "\x68\x65\x6c\x6c\x6f\x0a\x00", 7);
 
   // receive mac
   ret = strobe_operate(&s2, TYPE_MAC | FLAG_I, buffer + 7, 16, false);
-  if (ret < 0) {
+  if (!ret) {
     printf("error2\n");
     return 1;
   }
-  printf("4. recv_MAC: %ld\n", ret);
+  printf("4. recv_MAC\n");
 
   //
   unsigned char outt[16];
   ret = strobe_operate(&s1, TYPE_MAC, outt, 16, false);
-  if (ret < 0) {
+  if (!ret) {
     printf("error\n");
     return 1;
   }
   print("-debug buffer:", outt, 16);
   ret = strobe_operate(&s2, TYPE_MAC | FLAG_I, outt, 16, false);
-  if (ret < 0) {
+  if (!ret) {
     printf("error2\n");
     return 1;
   }
