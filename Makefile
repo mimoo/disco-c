@@ -5,7 +5,7 @@ CFLAGS= -g -O1 -Wall -Werror -std=c99 -fsanitize=address
 
 .PHONY: all clean test test_strobe
 
-all: disco_asymmetric.a
+all: disco.a
 
 # make a library, is this useful?
 disco.a: disco_symmetric.o disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o
