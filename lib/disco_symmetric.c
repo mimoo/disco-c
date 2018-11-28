@@ -127,10 +127,7 @@ bool disco_VerifyIntegrity(uint8_t* key, size_t key_len, uint8_t* data,
   strobe_init(&strobe, "DiscoMAC", 8);
   strobe_operate(&strobe, TYPE_AD, key, key_len, false);
   strobe_operate(&strobe, TYPE_AD, data, data_len, false);
-  if (strobe_operate(&strobe, TYPE_MAC | FLAG_I, tag, tag_len, false) < 0) {
-    return false;
-  }
-  return true;
+  return strobe_operate(&strobe, TYPE_MAC | FLAG_I, tag, tag_len, false);
 }
 
 //

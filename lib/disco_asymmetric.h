@@ -64,6 +64,7 @@ typedef struct handshakeState_ {
 
   keyPair s;
   keyPair e;
+  // TODO: no need for the privatekey part of these keyPairs, takes space
   keyPair rs;
   keyPair re;
 

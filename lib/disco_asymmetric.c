@@ -94,22 +94,19 @@ void encryptAndHash(symmetricState *ss, uint8_t *plaintext,
 bool decryptAndHash(symmetricState *ss, uint8_t *ciphertext,
                     size_t ciphertext_len) {
   if (!ss->isKeyed) {
-    strobe_operate(&(ss->strobe), TYPE_CLR | FLAG_I, ciphertext, ciphertext_len,
-                   false);
-  } else {
-    if (ciphertext_len < 16) {
-      return false;
-    }
-
-    strobe_operate(&(ss->strobe), TYPE_ENC | FLAG_I, ciphertext,
-                   ciphertext_len - 16, false);
-
-    if (strobe_operate(&(ss->strobe), TYPE_MAC | FLAG_I,
-                       ciphertext + ciphertext_len - 16, 16, false) < 0) {
-      return false;
-    }
+    return strobe_operate(&(ss->strobe), TYPE_CLR | FLAG_I, ciphertext,
+                          ciphertext_len, false);
   }
-  return true;
+
+  if (ciphertext_len < 16) {
+    return false;
+  }
+
+  strobe_operate(&(ss->strobe), TYPE_ENC | FLAG_I, ciphertext,
+                 ciphertext_len - 16, false);
+
+  return strobe_operate(&(ss->strobe), TYPE_MAC | FLAG_I,
+                        ciphertext + ciphertext_len - 16, 16, false);
 }
 
 // split takes a symmetric state ss, a strobe state s1 and an empty
