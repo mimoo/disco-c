@@ -1,0 +1,10 @@
+site_name: EmbeddedDisco
+nav:
+    - Home: index.md
+    - Source Code: https://www.github.com/mimoo/disco-c
+    - Specification: https://www.discocrypto.com/disco.html
+    - About: about.md
+theme:
+  name: 'material'
+markdown_extensions:
+  - codehilite
