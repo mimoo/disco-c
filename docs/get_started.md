@@ -7,17 +7,27 @@
     docs/                  # documentation files.
     examples/              # examples of using EmbeddedDisco.
     lib/                  
-        devurandom.c       # 
-        disco_asymmetric.h #
-        disco_symmetric.h  
-        keccak_f.c.inc     
-        tweetX25519.h      
-        tweetstrobe.h      
+        devurandom.c       # contains a randombytes() function
+        disco_asymmetric.h # disco implementation
+        disco_symmetric.h  # symmetric wrappers around strobe
+        keccak_f.c.inc     # implementation of keccak-f
+        tweetX25519.h      # implementation of X25519
+        tweetstrobe.h      # strobe implementation
         ...                
 
 ## How to use?
 
-Note that Disco is configured with `Keccak-f[1600]` and `128-bit` of security. This settings can be changed for `keccak-f[800]`/`keccak-f[400]` or `256-bit` of security. This is all done in `tweetstrobe.h` by defining `STROBE_INTEROP_SECURITY_BITS` and `KECCAK_INTEROP_F_BITS`.
+This library is intended to be highly portable. If you have trouble using it on a specific platform please create [an issue](https://github.com/mimoo/disco-c/issues).
+
+It is not a plug-and-play implementation of the Disco protocol, but is almost there. You will need to figure out how to transport messages. If your framing does not include a length, you will need to pre-pend a 2-byte length in front of each disco message. See `examples/golang_interop/`.
+
+While the library contains everything you need, you might have or are even expected to swap files for your own implementations of the components Disco relies on:
+
+* If you don't have booleans, you can redefine `bool` yourself. If you don't have the `uint8_t` type, you can redefine it yourself as well.
+* If you want a more efficient implementation of keccak-f for your platform, [many exists](https://github.com/XKCP/XKCP). The implementations used in EmbeddedDisco are mostly intended for brievety and clarity, not necessarily for speed. Complexity adds risks as it is harder to audit. Think about it.
+* The library is configured with `Keccak-f[1600]` (which takes 1600-bit of space) and `128-bit` of security as defaults. The permutation can be changed for `keccak-f[800]` or `keccak-f[400]` (which will respectively take 800-bit and 400-bit of space), the security can be changed to `256-bit`. This is all done in `tweetstrobe.h` by defining `STROBE_INTEROP_SECURITY_BITS` and `KECCAK_INTEROP_F_BITS`.
+* If you want a more efficient implementation of X25519, they probably exist. Ref10 perhaps?
+* If you require powerful side-channel mitigations in highly adversarial environements, you might want to replace the primitives with your own implementations.
 
 ## Establishing a secure session between two peers
 
