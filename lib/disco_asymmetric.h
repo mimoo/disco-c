@@ -77,23 +77,29 @@ typedef struct handshakeState_ {
 // Public API
 // ==========
 
-// utility function
+// used to generate long-term key pairs
 void disco_generateKeyPair(keyPair *kp);
 
-// handshake
+// used to initialized your handshakeState with a handshake pattern
 void disco_Initialize(handshakeState *hs, const char *handshake_pattern,
                       bool initiator, uint8_t *prologue, size_t prologue_len,
                       keyPair *s, keyPair *e, keyPair *rs, keyPair *re);
+
+// used to generate the next handshake message to send
 int disco_WriteMessage(handshakeState *hs, uint8_t *payload, size_t payload_len,
                        uint8_t *message_buffer, size_t *message_len,
                        strobe_s *client_s, strobe_s *server_s);
+
+// used to parse a the last handshake message received
 int disco_ReadMessage(handshakeState *hs, uint8_t *message, size_t message_len,
                       uint8_t *payload_buffer, size_t *payload_len,
                       strobe_s *client_s, strobe_s *server_s);
 
-// post-handshake
+// post-handshake encryption
 void disco_EncryptInPlace(strobe_s *strobe, uint8_t *plaintext,
                           size_t plaintext_len, size_t plaintext_capacity);
+
+// post-handshake decryption
 bool disco_DecryptInPlace(strobe_s *strobe, uint8_t *ciphertext,
                           size_t ciphertext_len);
 
