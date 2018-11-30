@@ -1,3 +1,5 @@
+#ifndef DISCO_SYMMETRIC_H_
+#define DISCO_SYMMETRIC_H_
 #include "tweetstrobe.h"
 
 // hashing
@@ -53,3 +55,5 @@ void disco_RandomSeed(discoRandomCtx* ctx, uint8_t* seed, size_t seed_len);
 void disco_InjectEntropy(discoRandomCtx* ctx, uint8_t* entropy,
                          size_t entropy_len);
 void disco_RandomGet(discoRandomCtx* ctx, uint8_t* out, size_t out_len);
+
+#endif // DISCO_SYMMETRIC_H_
