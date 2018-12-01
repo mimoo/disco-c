@@ -1,6 +1,8 @@
 # This is a draft of a Makefile
 # it contains stuff like -g and -std=c11 and -fsanitize=address that are not
 # useful for production binaries
+
+# for some reason -Os gives me  larger library
 CFLAGS= -g -O1 -Wall -Werror -std=c99 -fsanitize=address
 
 .PHONY: all clean test test_strobe
@@ -9,7 +11,7 @@ all: disco.a
 
 # make a library, is this useful?
 disco.a: disco_symmetric.o disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o
-	ar -cvq disco_asymmetric.a disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o
+	ar -cvq disco_asymmetric.a disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o && mv disco_asymmetric.a disco.a
 
 # Disco protocol
 disco_asymmetric.o: lib/disco_asymmetric.c lib/disco_asymmetric.h
