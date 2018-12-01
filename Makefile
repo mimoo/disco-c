@@ -7,11 +7,11 @@ CFLAGS= -g -O1 -Wall -Werror -std=c99 -fsanitize=address
 
 .PHONY: all clean test test_strobe
 
-all: disco.a
+all: disco.so
 
-# make a library, is this useful?
-disco.a: disco_symmetric.o disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o
-	ar -cvq disco_asymmetric.a disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o && mv disco_asymmetric.a disco.a
+# make a library
+disco.so: disco_symmetric.o disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o
+	$(CC) -shared disco_symmetric.o disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o -o disco.so
 
 # Disco protocol
 disco_asymmetric.o: lib/disco_asymmetric.c lib/disco_asymmetric.h
