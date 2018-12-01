@@ -1,6 +1,6 @@
 # EmbeddedDisco
 
-**EmbeddedDisco** is a modern protocol and a cryptographic library in C. It offers different ways of encrypting communications, as well as different cryptographic primitives for all of an application's needs. It targets simplicity, security and portability, with around **1000 lines-of-code**, not a single malloc and a design based solely on the well-accepted SHA-3 and Curve25519 cryptographic primitives.
+**EmbeddedDisco** is a modern protocol and a cryptographic library in C. It offers different ways of encrypting communications, as well as different cryptographic primitives for all of an application's needs. It targets simplicity, security and portability, with around **1000 lines-of-code**, not a single malloc and a design based solely on the well-accepted SHA-3 and Curve25519 cryptographic primitives. It's for embedded devices, automotive chips, etc.
 
 ![size](https://www.cryptologie.net/upload/LOC.png)
 
