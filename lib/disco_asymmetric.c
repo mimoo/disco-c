@@ -200,11 +200,9 @@ void disco_Initialize(handshakeState *hs, const char *handshake_pattern,
 
   // handshake_pattern is of the following form:
   // "protocol_name \x00 pre-message patterns \x00 message patterns"
-  printf("debug1:%s\n", handshake_pattern);
   initializeSymmetric(&(hs->symmetric_state), handshake_pattern,
                       strlen(handshake_pattern));
   handshake_pattern = handshake_pattern + strlen(handshake_pattern) + 1;
-  printf("debug2:%s\n", handshake_pattern);
 
   hs->symmetric_state.isKeyed = false;
 
