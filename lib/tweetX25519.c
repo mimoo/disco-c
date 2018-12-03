@@ -7,9 +7,9 @@
 
 typedef long long i64;
 typedef i64 gf[16];
-extern void randombytes(u8 *, u64);
+extern void randombytes(unsigned char *, unsigned long long);
 
-static const u8 _9[32] = {9};
+static const unsigned char _9[32] = {9};
 static const gf _121665 = {0xDB41, 1};
 sv car25519(gf o) {
   int i;
@@ -31,7 +31,7 @@ sv sel25519(gf p, gf q, int b) {
   }
 }
 
-sv pack25519(u8 *o, const gf n) {
+sv pack25519(unsigned char *o, const gf n) {
   int i, j, b;
   gf m, t;
   FOR(i, 16) t[i] = n[i];
@@ -55,7 +55,7 @@ sv pack25519(u8 *o, const gf n) {
   }
 }
 
-sv unpack25519(gf o, const u8 *n) {
+sv unpack25519(gf o, const unsigned char *n) {
   int i;
   FOR(i, 16) o[i] = n[2 * i] + ((i64)n[2 * i + 1] << 8);
   o[15] &= 0x7fff;
@@ -94,8 +94,8 @@ sv inv25519(gf o, const gf i) {
   FOR(a, 16) o[a] = c[a];
 }
 
-int crypto_scalarmult(u8 *q, const u8 *n, const u8 *p) {
-  u8 z[32];
+int crypto_scalarmult(unsigned char *q, const unsigned char *n, const unsigned char *p) {
+  unsigned char z[32];
   i64 x[80], r, i;
   gf a, b, c, d, e, f;
   FOR(i, 31) z[i] = n[i];
@@ -144,11 +144,11 @@ int crypto_scalarmult(u8 *q, const u8 *n, const u8 *p) {
   return 0;
 }
 
-int crypto_scalarmult_base(u8 *q, const u8 *n) {
+int crypto_scalarmult_base(unsigned char *q, const unsigned char *n) {
   return crypto_scalarmult(q, n, _9);
 }
 
-int crypto_box_keypair(u8 *y, u8 *x) {
+int crypto_box_keypair(unsigned char *y, unsigned char *x) {
   randombytes(x, 32);
   return crypto_scalarmult_base(y, x);
 }
