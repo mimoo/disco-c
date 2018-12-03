@@ -3,7 +3,7 @@
 # useful for production binaries
 
 # for some reason -Os gives me  larger library
-CFLAGS= -g -Os -Wall -Werror -std=c99 -fsanitize=address
+CFLAGS= -g -fPIC -Os -Wall -Werror -std=c99 -fsanitize=address
 
 .PHONY: all clean test test_strobe
 
