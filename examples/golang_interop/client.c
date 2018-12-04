@@ -150,13 +150,18 @@ int main(int argc, char const *argv[]) {
   while (true) {
     // get line
     char *buffer = NULL;
-    size_t size;
-    getline(&buffer, &size, stdin);
+    size_t size = 0;
+    ssize_t nread = getline(&buffer, &size, stdin);
+    if (nread < 0) {
+      printf("error reading the line\n");
+      return 1;
+    }
     // encrypt
-    out_len = sizeof(buffer) + 16;                         // plaintext + tag
+    printf("sizeof(buffer)=%lu\n", nread);
+    out_len = nread + 16;                                  // plaintext + tag
     uint8_t *ct_and_mac = (uint8_t *)malloc(out_len + 2);  // +2 (length)
-    memcpy(ct_and_mac + 2, (uint8_t *)buffer, sizeof(buffer));
-    disco_EncryptInPlace(&c_write, ct_and_mac + 2, sizeof(buffer), out_len);
+    memcpy(ct_and_mac + 2, (uint8_t *)buffer, nread);
+    disco_EncryptInPlace(&c_write, ct_and_mac + 2, nread, out_len);
 
     // length framing
     ct_and_mac[0] = (out_len >> 8) & 0xFF;
