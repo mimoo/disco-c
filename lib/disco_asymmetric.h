@@ -12,6 +12,7 @@
 #define __DISCO_H__
 
 #include "tweetstrobe.h"
+#include "tweetX25519.h"
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -80,8 +81,12 @@ typedef struct handshakeState_ {
 // Public API
 // ==========
 
-// used to generate long-term key pairs
-inline void disco_generateKeyPair(keyPair *kp);
+// used to generate long-term key pairs for a peer
+inline void disco_generateKeyPair(keyPair *kp) {
+  crypto_box_keypair(kp->pub, kp->priv);
+  kp->isSet = true;  // TODO: is this useful? If it is, should we use a magic
+                     // number here in case it's not initialized to false?
+}
 
 // used to initialized your handshakeState with a handshake pattern
 void disco_Initialize(handshakeState *hs, const char *handshake_pattern,

@@ -27,7 +27,7 @@ int main() {
                    NULL, NULL, NULL);
 
   // process the first handshake message → e, es, s, ss
-  u8 in[500];
+  uint8_t in[500];
   size_t in_len
   bool ret = disco_ReadMessage(&hs_server, out, out_len, in, &in_len, NULL, NULL);
   if (!ret) {
@@ -41,7 +41,7 @@ int main() {
   strobe_s s_write;
   strobe_s s_read;
   size_t out_len;
-  ret = disco_WriteMessage(&hs_server, (u8 *)"second payload", 15,
+  ret = disco_WriteMessage(&hs_server, (uint8_t *)"second payload", 15,
                                        out, &out_len, &s_read, &s_write);
   if (!ret) {
     abort();
@@ -86,10 +86,10 @@ int main() {
                    NULL, &server_keypair, NULL);
 
   // write the first handshake message → e, es, s, ss
-  u8 out[500];
+  uint8_t out[500];
   size_t out_len;
   bool ret =
-      disco_WriteMessage(&hs_client, (u8*)"hey!", 5, out, &out_len, NULL, NULL);
+      disco_WriteMessage(&hs_client, (uint8_t*)"hey!", 5, out, &out_len, NULL, NULL);
   if (!ret) {
     abort();
   }
@@ -110,8 +110,8 @@ int main() {
   assert(c_write.initialized && c_read.initialized);
 
   // send a post-handshake message
-  u8 plaintext[] = "just a simple message";
-  u8* ciphertext = (u8*)malloc(sizeof(plaintext) + 16);
+  uint8_t plaintext[] = "just a simple message";
+  uint8_t* ciphertext = (uint8_t*)malloc(sizeof(plaintext) + 16);
   memcpy(ciphertext, plaintext, sizeof(plaintext));
 
   disco_EncryptInPlace(&c_write, ciphertext, sizeof(plaintext),

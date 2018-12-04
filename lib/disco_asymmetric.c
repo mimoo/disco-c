@@ -32,18 +32,7 @@
 // ======
 // Used for key exchanges.
 
-/**
- * disco_generateKeyPair can be used to generate a X25519 keypair. This is
- * useful for creating long-term keypairs for a peer.
- * @kp an initialized keyPair struct. It is over-written by the function.
- */
-inline void disco_generateKeyPair(keyPair *kp) {
-  crypto_box_keypair(kp->pub, kp->priv);
-  kp->isSet = true;  // TODO: is this useful? If it is, should we use a magic
-                     // number here in case it's not initialized to false?
-}
-
-inline void DH(keyPair mine, keyPair theirs, uint8_t *output) {
+static inline void DH(keyPair mine, keyPair theirs, uint8_t *output) {
   crypto_scalarmult(output, mine.priv, theirs.pub);
 }
 
@@ -53,33 +42,37 @@ inline void DH(keyPair mine, keyPair theirs, uint8_t *output) {
 // Refer to the Disco specification to understand the meaning of these
 // functions.
 
-inline void initializeSymmetric(symmetricState *ss, const char *protocol_name,
-                                size_t protocol_name_len) {
+static inline void initializeSymmetric(symmetricState *ss,
+                                       const char *protocol_name,
+                                       size_t protocol_name_len) {
   strobe_init(&(ss->strobe), protocol_name, protocol_name_len);
 }
 
-inline void mixKey(symmetricState *ss, uint8_t *input_key_material) {
+static inline void mixKey(symmetricState *ss, uint8_t *input_key_material) {
   strobe_operate(&(ss->strobe), TYPE_AD, input_key_material, 32, false);
   ss->isKeyed = true;
 }
 
-inline void mixHash(symmetricState *ss, uint8_t *data, size_t data_len) {
+static inline void mixHash(symmetricState *ss, uint8_t *data, size_t data_len) {
   strobe_operate(&(ss->strobe), TYPE_AD, data, data_len, false);
 }
 
-inline void mixKeyAndHash(symmetricState *ss, uint8_t *input_key_material) {
+/*
+static inline void mixKeyAndHash(symmetricState *ss,
+                                 uint8_t *input_key_material) {
   strobe_operate(&(ss->strobe), TYPE_AD, input_key_material, 32, false);
 }
 
-inline void getHandshakeHash(symmetricState *ss, uint8_t *result) {
+static inline void getHandshakeHash(symmetricState *ss, uint8_t *result) {
   strobe_operate(&(ss->strobe), TYPE_PRF, result, 32, false);
 }
+*/
 
 // note that this function modifies the plaintext in place, and requires the
 // plaintext buffer to have 16 more bytes of capacity for the authentication tag
 // if the symmetric state is keyed
-inline void encryptAndHash(symmetricState *ss, uint8_t *plaintext,
-                           size_t plaintext_len) {
+static inline void encryptAndHash(symmetricState *ss, uint8_t *plaintext,
+                                  size_t plaintext_len) {
   if (!ss->isKeyed) {
     strobe_operate(&(ss->strobe), TYPE_CLR, plaintext, plaintext_len, false);
   } else {
@@ -91,8 +84,8 @@ inline void encryptAndHash(symmetricState *ss, uint8_t *plaintext,
 
 // note that the decryption occurs in place, and the the result is
 // `ciphertext_len-16` in case the symmetric state is keyed.
-inline bool decryptAndHash(symmetricState *ss, uint8_t *ciphertext,
-                           size_t ciphertext_len) {
+static inline bool decryptAndHash(symmetricState *ss, uint8_t *ciphertext,
+                                  size_t ciphertext_len) {
   if (!ss->isKeyed) {
     return strobe_operate(&(ss->strobe), TYPE_CLR | FLAG_I, ciphertext,
                           ciphertext_len, false);

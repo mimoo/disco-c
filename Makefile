@@ -3,7 +3,7 @@
 # useful for production binaries
 
 # for some reason -Os gives me  larger library
-CFLAGS= -Os -Wall -Werror -std=c99 -fsanitize=address -g 
+CFLAGS= -Os -Wall -Werror -std=c99 -fsanitize=address,undefined -g 
 
 .PHONY: all clean test test_strobe
 
@@ -11,7 +11,7 @@ all: disco.so
 
 # make a library
 disco.so: disco_symmetric.o disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o
-	$(CC) -shared disco_symmetric.o disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o -o disco.so
+	$(CC) $(CFLAGS) -shared disco_symmetric.o disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o -o disco.so
 
 # Disco protocol
 disco_asymmetric.o: lib/disco_asymmetric.c lib/disco_asymmetric.h
@@ -35,8 +35,8 @@ tweetstrobe.o: lib/tweetstrobe.c lib/tweetstrobe.h lib/keccak_f.c.inc
 
 # test is probably how you should compile your own program
 test: tests/test_disco.c disco_asymmetric.o tweetstrobe.o tweetX25519.o randombytes.o disco_symmetric.o
-	$(CC) $(CFLAGS) -g tests/test_disco.c -c -o test_disco.o -I lib
-	$(CC) $(CFLAGS) -g test_disco.o disco_asymmetric.o disco_symmetric.o tweetstrobe.o tweetX25519.o randombytes.o -o test
+	$(CC) $(CFLAGS) tests/test_disco.c -c -o test_disco.o -I lib
+	$(CC) $(CFLAGS) test_disco.o disco_asymmetric.o disco_symmetric.o tweetstrobe.o tweetX25519.o randombytes.o -o test
 	./test
 
 # test our implementation of tweetstrobe
