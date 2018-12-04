@@ -4,7 +4,7 @@
 #include "tweetX25519.h"
 #define FOR(i, n) for (i = 0; i < n; ++i)
 #define sv static void
-typedef uint64_t gf[16];
+typedef int64_t gf[16];
 
 extern void randombytes(uint8_t *, uint64_t);
 
@@ -12,7 +12,7 @@ static const uint8_t _9[32] = {9};
 static const gf _121665 = {0xDB41, 1};
 sv car25519(gf o) {
   int i;
-  uint64_t c;
+  int64_t c;
   FOR(i, 16) {
     o[i] += (1LL << 16);
     c = o[i] >> 16;
@@ -22,7 +22,7 @@ sv car25519(gf o) {
 }
 
 sv sel25519(gf p, gf q, int b) {
-  uint64_t t, i, c = ~(b - 1);
+  int64_t t, i, c = ~(b - 1);
   FOR(i, 16) {
     t = c & (p[i] ^ q[i]);
     p[i] ^= t;
@@ -56,7 +56,7 @@ sv pack25519(uint8_t *o, const gf n) {
 
 sv unpack25519(gf o, const uint8_t *n) {
   int i;
-  FOR(i, 16) o[i] = n[2 * i] + ((uint64_t)n[2 * i + 1] << 8);
+  FOR(i, 16) o[i] = n[2 * i] + ((int64_t)n[2 * i + 1] << 8);
   o[15] &= 0x7fff;
 }
 
@@ -71,7 +71,7 @@ sv Z(gf o, const gf a, const gf b) {
 }
 
 sv M(gf o, const gf a, const gf b) {
-  uint64_t i, j, t[31];
+  int64_t i, j, t[31];
   FOR(i, 31) t[i] = 0;
   FOR(i, 16) FOR(j, 16) t[i + j] += a[i] * b[j];
   FOR(i, 15) t[i] += 38 * t[i + 16];
@@ -95,7 +95,7 @@ sv inv25519(gf o, const gf i) {
 
 int crypto_scalarmult(uint8_t *q, const uint8_t *n, const uint8_t *p) {
   uint8_t z[32];
-  uint64_t x[80], r, i;
+  int64_t x[80], r, i;
   gf a, b, c, d, e, f;
   FOR(i, 31) z[i] = n[i];
   z[31] = (n[31] & 127) | 64;
