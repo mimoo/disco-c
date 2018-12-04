@@ -134,6 +134,12 @@ int main() {
 }
 ```
 
+## Testing and Production
+
+**EmbeddedDisco is not stable yet, it is not ready for production**.
+
+Do not use optimizations for testing, as the code contains asserts to pick common mistakes.
+
 ## Need help?
 
 This library is still heavily experimental. Its goal is to support as many platforms as possible. If you need help making it work for a specific platform please post an issue. If you have feedback, or suggestions, please post an issue as well.

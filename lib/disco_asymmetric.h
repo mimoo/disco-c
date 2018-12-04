@@ -81,7 +81,7 @@ typedef struct handshakeState_ {
 // ==========
 
 // used to generate long-term key pairs
-void disco_generateKeyPair(keyPair *kp);
+inline void disco_generateKeyPair(keyPair *kp);
 
 // used to initialized your handshakeState with a handshake pattern
 void disco_Initialize(handshakeState *hs, const char *handshake_pattern,
