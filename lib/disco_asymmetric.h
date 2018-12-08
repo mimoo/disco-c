@@ -82,7 +82,7 @@ typedef struct handshakeState_ {
 // ==========
 
 // used to generate long-term key pairs for a peer
-inline void disco_generateKeyPair(keyPair *kp) {
+static inline void disco_generateKeyPair(keyPair *kp) {
   crypto_box_keypair(kp->pub, kp->priv);
   kp->isSet = true;  // TODO: is this useful? If it is, should we use a magic
                      // number here in case it's not initialized to false?
