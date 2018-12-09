@@ -1,9 +1,7 @@
 # This is a draft of a Makefile
 # it contains stuff like -g and -std=c11 and -fsanitize=address that are not
 # useful for production binaries
-
-# for some reason -Os gives me  larger library
-CFLAGS= -Os -Wall -Werror -std=c99 -fsanitize=address,undefined -g 
+CFLAGS= -g -fPIC -Os -Wall -Werror -std=c99 -fsanitize=address,undefined
 
 .PHONY: all clean test test_strobe
 
