@@ -4,16 +4,15 @@
 #include "tweetX25519.h"
 #define FOR(i, n) for (i = 0; i < n; ++i)
 #define sv static void
+typedef int64_t gf[16];
 
-typedef long long i64;
-typedef i64 gf[16];
-extern void randombytes(u8 *, u64);
+extern void randombytes(uint8_t *, uint64_t);
 
-static const u8 _9[32] = {9};
+static const uint8_t _9[32] = {9};
 static const gf _121665 = {0xDB41, 1};
 sv car25519(gf o) {
   int i;
-  i64 c;
+  int64_t c;
   FOR(i, 16) {
     o[i] += (1LL << 16);
     c = o[i] >> 16;
@@ -23,7 +22,7 @@ sv car25519(gf o) {
 }
 
 sv sel25519(gf p, gf q, int b) {
-  i64 t, i, c = ~(b - 1);
+  int64_t t, i, c = ~(b - 1);
   FOR(i, 16) {
     t = c & (p[i] ^ q[i]);
     p[i] ^= t;
@@ -31,7 +30,7 @@ sv sel25519(gf p, gf q, int b) {
   }
 }
 
-sv pack25519(u8 *o, const gf n) {
+sv pack25519(uint8_t *o, const gf n) {
   int i, j, b;
   gf m, t;
   FOR(i, 16) t[i] = n[i];
@@ -55,9 +54,9 @@ sv pack25519(u8 *o, const gf n) {
   }
 }
 
-sv unpack25519(gf o, const u8 *n) {
+sv unpack25519(gf o, const uint8_t *n) {
   int i;
-  FOR(i, 16) o[i] = n[2 * i] + ((i64)n[2 * i + 1] << 8);
+  FOR(i, 16) o[i] = n[2 * i] + ((int64_t)n[2 * i + 1] << 8);
   o[15] &= 0x7fff;
 }
 
@@ -72,7 +71,7 @@ sv Z(gf o, const gf a, const gf b) {
 }
 
 sv M(gf o, const gf a, const gf b) {
-  i64 i, j, t[31];
+  int64_t i, j, t[31];
   FOR(i, 31) t[i] = 0;
   FOR(i, 16) FOR(j, 16) t[i + j] += a[i] * b[j];
   FOR(i, 15) t[i] += 38 * t[i + 16];
@@ -94,9 +93,9 @@ sv inv25519(gf o, const gf i) {
   FOR(a, 16) o[a] = c[a];
 }
 
-int crypto_scalarmult(u8 *q, const u8 *n, const u8 *p) {
-  u8 z[32];
-  i64 x[80], r, i;
+int crypto_scalarmult(uint8_t *q, const uint8_t *n, const uint8_t *p) {
+  uint8_t z[32];
+  int64_t x[80], r, i;
   gf a, b, c, d, e, f;
   FOR(i, 31) z[i] = n[i];
   z[31] = (n[31] & 127) | 64;
@@ -144,11 +143,11 @@ int crypto_scalarmult(u8 *q, const u8 *n, const u8 *p) {
   return 0;
 }
 
-int crypto_scalarmult_base(u8 *q, const u8 *n) {
+int crypto_scalarmult_base(uint8_t *q, const uint8_t *n) {
   return crypto_scalarmult(q, n, _9);
 }
 
-int crypto_box_keypair(u8 *y, u8 *x) {
+int crypto_box_keypair(uint8_t *y, uint8_t *x) {
   randombytes(x, 32);
   return crypto_scalarmult_base(y, x);
 }

@@ -1,10 +1,9 @@
 #ifndef __CURVE25519_H__
 #define __CURVE25519_H__
 
-typedef unsigned char u8;
-typedef unsigned long long u64;
+#include <stdint.h>
 
-int crypto_scalarmult(u8 *q, const u8 *n, const u8 *p);
-int crypto_box_keypair(u8 *y, u8 *x);
+int crypto_scalarmult(uint8_t *q, const uint8_t *n, const uint8_t *p);
+int crypto_box_keypair(uint8_t *y, uint8_t *x);
 
 #endif /* __CURVE25519_H__ */

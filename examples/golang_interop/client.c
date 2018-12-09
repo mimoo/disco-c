@@ -74,9 +74,10 @@ int main(int argc, char const *argv[]) {
 
   // generate the first handshake message → e, es
   uint8_t out[500];
-  ssize_t out_len =
-      disco_WriteMessage(&hs_client, NULL, 0, out + 2, NULL, NULL);
-  if (out_len < 0) {
+  size_t out_len;
+  bool ret =
+      disco_WriteMessage(&hs_client, NULL, 0, out + 2, &out_len, NULL, NULL);
+  if (!ret) {
     printf("can't generate first handshake message\n");
     return 1;
   }
@@ -132,9 +133,10 @@ int main(int argc, char const *argv[]) {
     printf("\nwe don't suppor this yet\n");
     return 1;
   }
-  ssize_t payload_len =
-      disco_ReadMessage(&hs_client, in + 2, in_len, payload, &c_write, &c_read);
-  if (payload_len < 0) {
+  size_t payload_len;
+  ret = disco_ReadMessage(&hs_client, in + 2, in_len, payload, &payload_len,
+                          &c_write, &c_read);
+  if (!ret) {
     printf("can't read handshake message\n");
     abort();
   }
@@ -147,18 +149,24 @@ int main(int argc, char const *argv[]) {
   // loop: receive a line from the terminal and send it to the server
   while (true) {
     // get line
-    unsigned char *buffer = NULL;
-    size_t size;
-    getline(&buffer, &size, stdin);
+    char *buffer = NULL;
+    size_t size = 0;
+    ssize_t nread = getline(&buffer, &size, stdin);
+    if (nread < 0) {
+      printf("error reading the line\n");
+      return 1;
+    }
     // encrypt
-    out_len = sizeof(buffer) + 16;  // plaintext + tag
-    uint8_t *ct_and_mac = (uint8_t *)malloc(out_len + 2);
-    memcpy(ct_and_mac + 2, buffer, sizeof(buffer));
-    disco_EncryptInPlace(&c_write, ct_and_mac + 2, sizeof(buffer), out_len + 2);
+    printf("sizeof(buffer)=%lu\n", nread);
+    out_len = nread + 16;                                  // plaintext + tag
+    uint8_t *ct_and_mac = (uint8_t *)malloc(out_len + 2);  // +2 (length)
+    memcpy(ct_and_mac + 2, (uint8_t *)buffer, nread);
+    disco_EncryptInPlace(&c_write, ct_and_mac + 2, nread, out_len);
 
     // length framing
     ct_and_mac[0] = (out_len >> 8) & 0xFF;
     ct_and_mac[1] = out_len & 0xFF;
+    printf("debug: %d, %d\n", ct_and_mac[0], ct_and_mac[1]);
 
     // send
     sent = send(sock, ct_and_mac, out_len + 2, 0);
@@ -170,6 +178,7 @@ int main(int argc, char const *argv[]) {
 
     // free
     free(buffer);
+    free(ct_and_mac);
   }
 
   //

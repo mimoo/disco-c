@@ -1,9 +1,10 @@
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdint.h>
 
 static int fd = -1;
 
-void randombytes(unsigned char *x, unsigned long long xlen) {
+void randombytes(uint8_t *x, uint64_t xlen) {
   int i;
 
   if (fd == -1) {
